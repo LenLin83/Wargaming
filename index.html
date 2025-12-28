@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>兵棋沙盤推演系統</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    /* 標籤頁切換樣式 */
+    .tab-container {
+      position: absolute;
+      top: 44px;
+      left: 0;
+      right: 0;
+      bottom: 48px;
+      display: flex;
+    }
+
+    .tab-content {
+      display: none;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .tab-content.active {
+      display: flex;
+    }
+
+    .tab-content#tab-sandbox {
+      flex-direction: column;
+    }
+
+    /* 符號編輯器全屏面板 */
+    #tab-symbol-editor {
+      background: var(--bg-primary);
+    }
+
+    /* 標籤切換按鈕 */
+    .tab-indicator {
+      position: absolute;
+      top: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 4px;
+      background: var(--bg-tertiary);
+      padding: 4px;
+      border-radius: 8px;
+      z-index: 100;
+    }
+
+    .tab-btn {
+      padding: 8px 20px;
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 13px;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+
+    .tab-btn:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-primary);
+    }
+
+    .tab-btn.active {
+      background: var(--accent-color);
+      color: white;
+    }
+
+    /* 符號編輯器全屏樣式 */
+    .symbol-editor-fullscreen {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      padding: 20px;
+      gap: 20px;
+      overflow: hidden;
+    }
+
+    .editor-preview-panel {
+      flex: 0 0 400px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .editor-controls-panel {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      background: var(--bg-secondary);
+      border-radius: 12px;
+    }
+
+    .editor-preview-card {
+      background: var(--bg-secondary);
+      border-radius: 12px;
+      padding: 24px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .editor-preview-canvas {
+      width: 300px;
+      height: 300px;
+      background: var(--bg-tertiary);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .editor-preview-canvas canvas {
+      max-width: 100%;
+      max-height: 100%;
+    }
+
+    .editor-sidc-display {
+      margin-top: 20px;
+      padding: 16px;
+      background: var(--bg-tertiary);
+      border-radius: 8px;
+      width: 100%;
+    }
+
+    .editor-sidc-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    .editor-sidc-code {
+      font-family: 'Courier New', monospace;
+      font-size: 18px;
+      color: var(--accent-color);
+      font-weight: 600;
+      word-break: break-all;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+
+  <!-- Import Maps for ES Modules -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+
+  <!-- Load milsymbol.js as global script -->
+  <script src="https://unpkg.com/milsymbol@2.0.0/dist/milsymbol.js"></script>
+
+  <!-- Load dat.GUI -->
+  <script src="https://unpkg.com/dat.gui@0.7.9/build/dat.gui.min.js"></script>
+</head>
+<body>
+  <div class="app-container">
+    <!-- 工具列 -->
+    <header class="toolbar">
+      <!-- 標籤切換按鈕 -->
+      <div class="tab-indicator">
+        <button class="tab-btn active" data-tab="sandbox">沙盤推演</button>
+        <button class="tab-btn" data-tab="symbol-editor">符號編輯器</button>
+      </div>
+
+      <div class="menu-bar">
+        <button class="menu-button" data-action="file">檔案</button>
+        <button class="menu-button" data-action="edit">編輯</button>
+        <button class="menu-button" data-action="view">檢視</button>
+        <button class="menu-button" data-action="tools">工具</button>
+        <button class="menu-button" data-action="help">說明</button>
+      </div>
+
+      <div class="toolbar-separator"></div>
+
+      <!-- 工具按鈕組 -->
+      <div class="tool-group">
+        <button class="tool-button active" data-tool="select" title="選擇 (V)">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M6 2l-4 4 1.5 1.5L6 4.5 9.5 8l3-3-1.5-1.5L6 2zm0 12l4-4-1.5-1.5L10 11.5 6.5 8l-3 3 1.5 1.5L6 10 10 14z"/>
+          </svg>
+        </button>
+        <button class="tool-button" data-tool="move" title="移動 (M)">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M8 2l1 3H7l1-3zm0 12l-1-3h2l-1 3zM2 8l3-1v2l-3-1zm12 0l-3 1V7l3 1zM4 4l1.5 1.5L4 7 2.5 5.5 4 4zm8 0l-1.5 1.5L12 7l1.5-1.5L12 4z"/>
+          </svg>
+        </button>
+        <button class="tool-button" data-tool="rotate" title="旋轉 (R)">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M8 2A6 6 0 0 0 2 8h2a4 4 0 1 1 8 0h2A6 6 0 0 0 8 2zm0 12A6 6 0 0 0 14 8h-2a4 4 0 1 1-8 0h-2A6 6 0 0 0 8 14z"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="toolbar-separator"></div>
+
+      <!-- 戰術標繪工具 -->
+      <div class="tool-group">
+        <button class="tool-button" data-tool="point" title="點位標記 (1)">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+            <circle cx="8" cy="8" r="3"/>
+          </svg>
+        </button>
+        <button class="tool-button" data-tool="line" title="繪製線條 (2)">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M2 12l5-5 3 3 4-6"/>
+          </svg>
+        </button>
+        <button class="tool-button" data-tool="arrow" title="繪製箭頭 (3)">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M2 8h10l-2-2 1.5-1.5L14 8l-2.5 3.5L10 8l2-2H2z"/>
+          </svg>
+        </button>
+        <button class="tool-button" data-tool="area" title="繪製區域 (4)">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="4" width="10" height="8"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="toolbar-separator"></div>
+
+      <!-- 視圖控制 -->
+      <div class="tool-group">
+        <button class="tool-button" data-action="reset-view" title="重置視圖 (Home)">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M8 2L3 5v4c0 3.5 2.2 6.7 5 7.5 2.8-.8 5-4 5-7.5V5l-5-3z"/>
+          </svg>
+        </button>
+        <button class="tool-button" data-action="focus-selected" title="聚焦選中 (F)">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M8 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm0 1.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5z"/>
+          </svg>
+        </button>
+        <button class="tool-button" data-action="toggle-grid" title="切換網格 (G)">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M2 2v12h12V2H2zm2 2h8v8H4V4z"/>
+          </svg>
+        </button>
+      </div>
+
+      <div style="flex: 1"></div>
+
+      <!-- 符號編輯器按鈕 -->
+      <button class="tool-button" data-action="symbol-editor" title="符號編輯器 (E)">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M8 2c-1.1 0-2 .9-2 2v2H4c-.55 0-1 .45-1 1v6c0 .55.45 1 1 1h8c.55 0 1-.45 1-1V7c0-.55-.45-1-1-1h-2V4c0-1.1-.9-2-2-2zm0 1c.55 0 1 .45 1 1v2H7V4c0-.55.45-1 1-1zM4 7h8v6H4V7z"/>
+          <circle cx="8" cy="10" r="1.5"/>
+        </svg>
+      </button>
+
+      <!-- 設定按鈕 -->
+      <button class="tool-button" data-action="settings" title="設定">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M8 2a6 6 0 0 0-6 6c0 2.2 1.2 4.2 3 5.2V15l3-1.5L11 15v-1.8c1.8-1 3-3 3-5.2a6 6 0 0 0-6-6z"/>
+        </svg>
+      </button>
+    </header>
+
+    <!-- 標籤頁容器 -->
+    <div class="tab-container">
+      <!-- 沙盤推演標籤頁 -->
+      <div class="tab-content active" id="tab-sandbox">
+        <!-- 主容器 -->
+        <div class="main-container">
+      <!-- 左側 ORBAT 面板 -->
+      <aside class="left-panel">
+        <div class="panel-header">戰鬥序列 (ORBAT)</div>
+        <div id="orbat-tree" class="tree-container">
+          <!-- ORBAT 樹由 JS 動態生成 -->
+        </div>
+      </aside>
+
+      <!-- 3D 畫布 -->
+      <main class="canvas-container">
+        <canvas id="main-canvas"></canvas>
+
+        <!-- 資訊疊加層 -->
+        <div class="info-overlay">
+          <div class="info-item">
+            <span class="label">單位:</span>
+            <span class="value" id="unit-count">0</span>
+          </div>
+          <div class="info-item">
+            <span class="label">FPS:</span>
+            <span class="value" id="fps-counter">60</span>
+          </div>
+          <div class="info-item">
+            <span class="label">視圖:</span>
+            <span class="value" id="view-mode">戰術</span>
+          </div>
+        </div>
+      </main>
+
+      <!-- 右側屬性面板 -->
+      <aside class="right-panel">
+        <div class="panel-header">單位屬性</div>
+        <div id="property-content">
+          <div class="empty-state">
+            <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="#555" stroke-width="2">
+              <circle cx="24" cy="24" r="8"/>
+              <path d="M24 4v8m0 24v8M4 24h8m24 0h8"/>
+            </svg>
+            <p>未選擇單位</p>
+            <p class="hint">在 3D 視圖中點擊單位以檢視屬性</p>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <!-- 底部時間軸 -->
+    <footer class="timeline">
+      <div class="playback-controls">
+        <button class="control-button" data-action="goto-start" title="回到開始">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+            <path d="M2 7h10M2 4l4 3-4 3"/>
+          </svg>
+        </button>
+        <button class="control-button" data-action="step-backward" title="上一步">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+            <path d="M10 4l-4 3 4 3V4z"/>
+          </svg>
+        </button>
+        <button class="control-button primary" id="btn-play-pause" title="播放">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+            <path d="M4 3l8 4-8 4V3z"/>
+          </svg>
+        </button>
+        <button class="control-button" data-action="step-forward" title="下一步">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+            <path d="M4 4l4 3-4 3V4z"/>
+          </svg>
+        </button>
+        <button class="control-button" data-action="goto-end" title="跳到結束">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+            <path d="M12 7H2M12 4l-4 3 4 3"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="timeline-slider" id="timeline-slider">
+        <div class="timeline-progress" id="timeline-progress" style="width: 0%"></div>
+        <div class="timeline-thumb" id="timeline-thumb" style="left: 0%"></div>
+      </div>
+
+      <div class="time-display">
+        <span class="current-time" id="current-time">00:00</span>
+        <span class="time-separator">/</span>
+        <span class="total-time" id="total-time">10:00</span>
+      </div>
+
+      <div class="speed-control">
+        <button class="speed-button" data-speed="0.5">0.5x</button>
+        <button class="speed-button active" data-speed="1">1x</button>
+        <button class="speed-button" data-speed="2">2x</button>
+        <button class="speed-button" data-speed="4">4x</button>
+      </div>
+
+      <div class="toolbar-separator"></div>
+
+      <button class="control-button" data-action="toggle-calendar" title="顯示日曆">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+          <path d="M4 3V1h1v2h4V1h1v2h1a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h1z"/>
+        </svg>
+      </button>
+    </footer>
+      </div><!-- 結束 tab-sandbox -->
+
+      <!-- 符號編輯器標籤頁 -->
+      <div class="tab-content" id="tab-symbol-editor">
+        <div id="symbol-editor-controls" class="symbol-editor-main"></div>
+      </div>
+    </div><!-- 結束 tab-container -->
+  </div><!-- 結束 app-container -->
+
+  <!-- 移除舊的 symbol-editor-container -->
+
+  <!-- 主程式 -->
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

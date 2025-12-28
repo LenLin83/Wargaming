@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>兵棋符號編輯器 - Wargame Sandbox</title>
+  <link rel="stylesheet" href="css/symbol-editor.css">
+
+  <!-- Load milsymbol.js as global script -->
+  <script src="https://unpkg.com/milsymbol@2.0.0/dist/milsymbol.js"></script>
+</head>
+<body>
+  <div class="editor-container">
+    <!-- 頂部工具列 -->
+    <header class="editor-header">
+      <div class="header-left">
+        <h1>兵棋符號編輯器</h1>
+        <span class="subtitle">Military Symbol Editor</span>
+      </div>
+      <div class="header-actions">
+        <button class="header-btn" id="back-btn">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M4 8h10M4 4l4 4-4 4"/>
+          </svg>
+          返回主畫面
+        </button>
+      </div>
+    </header>
+
+    <!-- 主要內容區 -->
+    <main class="editor-main">
+      <!-- 左側：符號預覽 -->
+      <section class="preview-section">
+        <div class="preview-card">
+          <div class="preview-header">
+            <h2>符號預覽</h2>
+          </div>
+          <div class="preview-canvas-wrapper">
+            <canvas id="symbol-preview-canvas" width="300" height="300"></canvas>
+          </div>
+          <div class="preview-info">
+            <div class="info-row">
+              <span class="info-label">SIDC 代碼:</span>
+              <span class="info-value sidc-value" id="sidc-code">10031000151211000000</span>
+            </div>
+            <div class="info-row">
+              <button class="copy-btn" id="copy-sidc-btn">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M4 2h6a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm0 1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1H4z"/>
+                  <path d="M8 6h4M8 9h4M8 12h2"/>
+                </svg>
+                複製 SIDC
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 符號說明 -->
+        <div class="description-card">
+          <div class="description-header">
+            <h3>符號說明</h3>
+          </div>
+          <div class="description-content" id="symbol-description">
+            <p>選擇左側的屬性來自訂您的軍事符號。</p>
+            <p>SIDC (Symbol Identification Coding Scheme) 是一個 15 位元的代碼系統，用於標識軍事單位的類型、身份和狀態。</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 右側：編輯控制 -->
+      <section class="controls-section">
+        <!-- 身份/友敵 -->
+        <div class="control-group">
+          <div class="group-header">
+            <h3>身份/友敵</h3>
+            <span class="group-icon">🎯</span>
+          </div>
+          <div class="option-grid identity-grid" id="identity-options">
+            <!-- 動態生成 -->
+          </div>
+        </div>
+
+        <!-- 單位層級 -->
+        <div class="control-group">
+          <div class="group-header">
+            <h3>單位層級</h3>
+            <span class="group-icon">📊</span>
+          </div>
+          <select id="level-select" class="control-select">
+            <!-- 動態生成 -->
+          </select>
+        </div>
+
+        <!-- 編制類型 -->
+        <div class="control-group">
+          <div class="group-header">
+            <h3>編制類型</h3>
+            <span class="group-icon">🏢</span>
+          </div>
+          <div class="option-grid" id="command-type-options">
+            <!-- 動態生成 -->
+          </div>
+        </div>
+
+        <!-- 兵種類型 -->
+        <div class="control-group">
+          <div class="group-header">
+            <h3>兵種類型</h3>
+            <span class="group-icon">⚔️</span>
+          </div>
+          <select id="branch-select" class="control-select">
+            <!-- 動態生成 -->
+          </select>
+        </div>
+
+        <!-- 狀態修飾符 -->
+        <div class="control-group">
+          <div class="group-header">
+            <h3>狀態修飾符</h3>
+            <span class="group-icon">⚡</span>
+          </div>
+          <select id="status-select" class="control-select">
+            <!-- 動態生成 -->
+          </select>
+        </div>
+
+        <!-- 指揮指標 -->
+        <div class="control-group">
+          <div class="group-header">
+            <h3>指揮指標</h3>
+            <span class="group-icon">⭐</span>
+          </div>
+          <div class="option-grid" id="command-indicator-options">
+            <!-- 動態生成 -->
+          </div>
+        </div>
+
+        <!-- 操作按鈕 -->
+        <div class="action-buttons">
+          <button class="action-btn primary" id="apply-unit-btn">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M8 2l-4 4 1.5 1.5L6 4.5 9.5 8l3-3-1.5-1.5L6 2zm0 12l4-4-1.5-1.5L10 11.5 6.5 8l-3 3 1.5 1.5L6 10 10 14z"/>
+            </svg>
+            應用到選中單位
+          </button>
+          <button class="action-btn secondary" id="reset-btn">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M8 2A6 6 0 0 0 2 8h2a4 4 0 1 1 8 0h2A6 6 0 0 0 8 2zm0 12A6 6 0 0 0 14 8h-2a4 4 0 1 1-8 0h-2A6 6 0 0 0 8 14z"/>
+            </svg>
+            重置
+          </button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- 主程式 -->
+  <script type="module" src="js/symbol-editor-main.js"></script>
+</body>
+</html>

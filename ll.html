@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>I MEF - Organization Chart (Vanilla JS)</title>
+    <!-- 引入 Tailwind CSS 進行樣式設定 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Milsymbol 庫 -->
+    <script src="https://cdn.jsdelivr.net/npm/milsymbol@2.0.0/dist/milsymbol.js"></script>
+    <style>
+        /* 一些額外的自定義樣式 */
+        .org-line-vertical {
+            width: 1px;
+            background-color: #9ca3af; /* gray-400 */
+        }
+        .org-line-horizontal {
+            height: 1px;
+            background-color: #9ca3af; /* gray-400 */
+        }
+        .transition-all {
+            transition-property: all;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            transition-duration: 300ms;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans min-h-screen">
+
+    <!-- 標題區域 -->
+    <div class="p-8 text-center">
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">I MEF - Organization Chart</h1>
+        <p class="text-gray-600">美國海軍陸戰隊第一遠征軍編制圖 (Vanilla JS Version)</p>
+        <p class="text-xs text-gray-400 mt-2">符號生成: milsymbol.js | 標準: NATO APP-6</p>
+    </div>
+
+    <!-- 組織圖容器 -->
+    <div id="org-chart-container" class="flex justify-center p-4 pb-20 overflow-x-auto min-w-full">
+        <!-- JS 會將內容渲染在這裡 -->
+        <div class="text-gray-500">正在載入圖表...</div>
+    </div>
+
+    <!-- 圖例 -->
+    <div class="fixed bottom-4 right-4 bg-white p-4 rounded-lg shadow-lg border border-gray-200 text-xs max-w-xs z-50">
+        <h4 class="font-bold mb-2 text-gray-700">圖例說明 (NATO APP-6)</h4>
+        <ul class="space-y-1">
+            <li class="flex items-center gap-2"><span class="w-3 h-3 border border-black bg-blue-100"></span> 友軍單位 (Friendly)</li>
+            <li class="flex items-center gap-2"><span>XXX</span> 軍級 (Corps)</li>
+            <li class="flex items-center gap-2"><span>XX</span> 師級 (Division)</li>
+            <li class="flex items-center gap-2"><span>III</span> 團級 (Regiment)</li>
+        </ul>
+    </div>
+
+    <script>
+        // --- 1. 資料結構 (與之前相同) ---
+        const mefData = {
+            id: 'I-MEF',
+            name: 'I Marine Expeditionary Force',
+            chineseName: '第一遠征軍',
+            sidc: '30031000151211000000', // Corps/MEF
+            children: [
+                {
+                    id: '1-MARDIV',
+                    name: '1st Marine Division',
+                    chineseName: '陸戰第1師 (GCE)',
+                    sidc: '30031000141211000000', // Division
+                    children: [
+                        { id: 'HQ-BN', name: 'HQ Bn', chineseName: '師部營', sidc: '30031000121211000000' },
+                        { id: '1-MAR', name: '1st Marines', chineseName: '陸戰1團', sidc: '30031000131211000000' },
+                        { id: '5-MAR', name: '5th Marines', chineseName: '陸戰5團', sidc: '30031000131211000000' },
+                        { id: '7-MAR', name: '7th Marines', chineseName: '陸戰7團', sidc: '30031000131211000000' },
+                        { id: '11-MAR', name: '11th Marines', chineseName: '陸戰11團 (砲兵)', sidc: '30031000131214000000' },
+                        { id: '3-AA', name: '3rd Assault Amphibian', chineseName: '第3兩棲突擊營', sidc: '30031000121205000000' },
+                        { id: '1-LAR', name: '1st LAR', chineseName: '第1輕裝甲偵察營', sidc: '30031000121205000000' },
+                        { id: '1-CEB', name: '1st CEB', chineseName: '第1戰鬥工兵營', sidc: '30031000121218000000' },
+                    ]
+                },
+                {
+                    id: '3-MAW',
+                    name: '3rd Marine Aircraft Wing',
+                    chineseName: '第3陸戰航空聯隊 (ACE)',
+                    sidc: '30031000141101000000', // Wing
+                    children: [
+                        { id: 'MWHS-3', name: 'MWHS-3', chineseName: '聯隊部中隊', sidc: '30031000111101000000' },
+                        { id: 'MAG-11', name: 'MAG-11', chineseName: '第11航空大隊', sidc: '30031000131101000000' },
+                        { id: 'MAG-13', name: 'MAG-13', chineseName: '第13航空大隊', sidc: '30031000131101000000' },
+                        { id: 'MAG-16', name: 'MAG-16', chineseName: '第16航空大隊', sidc: '30031000131103000000' },
+                        { id: 'MAG-39', name: 'MAG-39', chineseName: '第39航空大隊', sidc: '30031000131103000000' },
+                        { id: 'MACG-38', name: 'MACG-38', chineseName: '第38航空管制大隊', sidc: '30031000131211000000' },
+                    ]
+                },
+                {
+                    id: '1-MLG',
+                    name: '1st Marine Logistics Group',
+                    chineseName: '第1陸戰後勤群 (LCE)',
+                    sidc: '30031000131301000000', // Group
+                    children: [
+                        { id: 'HQ-REG', name: 'HQ Reg', chineseName: '本部團', sidc: '30031000131301000000' },
+                        { id: 'CLR-1', name: 'CLR-1', chineseName: '第1戰鬥後勤團', sidc: '30031000131301000000' },
+                        { id: 'CLR-17', name: 'CLR-17', chineseName: '第17戰鬥後勤團', sidc: '30031000131301000000' },
+                        { id: 'ESB-7', name: '7th ESB', chineseName: '第7工兵支援營', sidc: '30031000121218000000' },
+                    ]
+                }
+            ]
+        };
+
+        // --- 2. 核心渲染邏輯 ---
+
+        // 用來創建 DOM 元素的輔助函數
+        function createEl(tag, classes = []) {
+            const el = document.createElement(tag);
+            if (classes.length) el.classList.add(...classes);
+            return el;
+        }
+
+        // 繪製單個節點的卡片 (包含符號和文字)
+        function createCard(data, isRoot) {
+            const card = createEl('div', [
+                'relative', 'flex', 'flex-col', 'items-center', 
+                'bg-white', 'border-2', 'p-2', 'rounded', 
+                'shadow-sm', 'hover:shadow-md', 'transition-shadow', 
+                'cursor-pointer', 'z-10', 'w-48'
+            ]);
+            
+            // 根據是否為根節點設置樣式
+            if (isRoot) {
+                card.classList.add('border-blue-800', 'bg-blue-50');
+            } else {
+                card.classList.add('border-gray-800');
+            }
+
+            // 1. 符號容器
+            const symbolContainer = createEl('div', [
+                'bg-gray-100', 'w-full', 'h-24', 'flex', 
+                'items-center', 'justify-center', 'rounded-sm', 
+                'mb-2', 'border', 'border-gray-200'
+            ]);
+            
+            // 使用 milsymbol 創建符號
+            if (window.ms) {
+                const sym = new ms.Symbol(data.sidc, {
+                    size: 30,
+                    uniqueDesignation: '',
+                    colorMode: 'Light',
+                    infoFields: false,
+                    strokeWidth: 4
+                });
+                symbolContainer.appendChild(sym.asDOM());
+            } else {
+                symbolContainer.textContent = "Loading...";
+            }
+            card.appendChild(symbolContainer);
+
+            // 2. 文字資訊
+            const textContainer = createEl('div', ['text-center']);
+            
+            const title = createEl('h3', ['font-bold', 'text-sm', 'text-gray-900', 'leading-tight']);
+            title.textContent = data.name;
+            
+            const subtitle = createEl('p', ['text-xs', 'text-gray-500', 'mt-1', 'font-medium']);
+            subtitle.textContent = data.chineseName;
+
+            textContainer.appendChild(title);
+            textContainer.appendChild(subtitle);
+            card.appendChild(textContainer);
+
+            return card;
+        }
+
+        // 遞迴函數：生成整個樹狀結構
+        function renderTree(data, container, isRoot = false) {
+            const wrapper = createEl('div', ['flex', 'flex-col', 'items-center']);
+            
+            // 1. 上方連接線 (如果不是根節點)
+            if (!isRoot) {
+                const topLine = createEl('div', ['h-8', 'w-px', 'bg-gray-400']);
+                wrapper.appendChild(topLine);
+            }
+
+            // 2. 節點本體 (卡片)
+            const card = createCard(data, isRoot);
+            wrapper.appendChild(card);
+
+            // 3. 處理子節點
+            if (data.children && data.children.length > 0) {
+                let isExpanded = true; // 預設展開狀態
+
+                // 展開/收起按鈕
+                const toggleBtn = createEl('div', [
+                    'absolute', '-bottom-3', 'bg-white', 'rounded-full', 
+                    'border', 'border-gray-400', 'w-5', 'h-5', 
+                    'flex', 'items-center', 'justify-center', 
+                    'text-xs', 'shadow-sm', 'select-none'
+                ]);
+                toggleBtn.textContent = '-';
+                card.appendChild(toggleBtn);
+
+                // 子節點容器 (包含下方連接線和橫向排列的子節點)
+                const childrenContainer = createEl('div', ['flex', 'flex-col', 'items-center', 'transition-all', 'overflow-hidden']);
+                
+                // 下方連接線
+                const bottomLine = createEl('div', ['h-8', 'w-px', 'bg-gray-400']);
+                childrenContainer.appendChild(bottomLine);
+
+                // 橫向包裝器 (放置所有子節點)
+                const horizontalWrapper = createEl('div', ['relative', 'flex', 'justify-center', 'gap-6', 'pt-0']);
+                
+                // 橫跨線 (連接所有子節點的頂部)
+                if (data.children.length > 1) {
+                    const crossLine = createEl('div', ['absolute', 'top-0', 'h-px', 'bg-gray-400', 'mx-auto']);
+                    // 為了美觀，稍微往內縮一點
+                    crossLine.style.left = '6rem';
+                    crossLine.style.right = '6rem';
+                    crossLine.style.width = 'calc(100% - 12rem)';
+                    horizontalWrapper.appendChild(crossLine);
+                }
+
+                // 遞迴渲染每個子節點
+                data.children.forEach(child => {
+                    const childWrapper = createEl('div', ['flex', 'flex-col', 'items-center', 'relative']);
+                    
+                    // 子節點頂部的小豎線 (連接到橫跨線)
+                    if (data.children.length > 1) {
+                        const connector = createEl('div', ['absolute', '-top-8', 'w-px', 'h-8', 'bg-gray-400']);
+                        childWrapper.appendChild(connector);
+                    }
+
+                    renderTree(child, childWrapper, false); // 遞迴呼叫
+                    horizontalWrapper.appendChild(childWrapper);
+                });
+
+                childrenContainer.appendChild(horizontalWrapper);
+                wrapper.appendChild(childrenContainer);
+
+                // 點擊事件：切換展開/收起
+                card.addEventListener('click', (e) => {
+                    // 防止點擊事件冒泡影響其他邏輯
+                    e.stopPropagation();
+                    isExpanded = !isExpanded;
+                    toggleBtn.textContent = isExpanded ? '-' : '+';
+                    
+                    if (isExpanded) {
+                        childrenContainer.style.display = 'flex';
+                    } else {
+                        childrenContainer.style.display = 'none';
+                    }
+                });
+            }
+
+            container.appendChild(wrapper);
+        }
+
+        // --- 3. 初始化 ---
+        window.onload = function() {
+            const rootContainer = document.getElementById('org-chart-container');
+            rootContainer.innerHTML = ''; // 清空載入文字
+            
+            // 確保 milsymbol 已載入
+            if (window.ms) {
+                renderTree(mefData, rootContainer, true);
+            } else {
+                // 如果 CDN 慢了，稍微等一下 (簡單處理)
+                setTimeout(() => {
+                    renderTree(mefData, rootContainer, true);
+                }, 500);
+            }
+        };
+
+    </script>
+</body>
+</html>

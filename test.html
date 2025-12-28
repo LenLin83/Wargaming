@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Milsymbol 兵棋編輯器</title>
+    <!-- 引入 milsymbol 庫 -->
+    <script src="https://unpkg.com/milsymbol@2.0.0/dist/milsymbol.js"></script>
+    
+    <style>
+        :root {
+            --sidebar-width: 300px;
+            --bg-color: #1a1a1a;
+            --panel-color: #2d2d2d;
+            --text-color: #e0e0e0;
+            --accent-color: #4a90e2;
+            --grid-color: #333;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            height: 100vh;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            overflow: hidden;
+        }
+
+        /* 左側控制面板樣式 */
+        #sidebar {
+            width: var(--sidebar-width);
+            background-color: var(--panel-color);
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 10;
+            overflow-y: auto;
+        }
+
+        h2, h3 {
+            margin: 0 0 10px 0;
+            color: var(--accent-color);
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+            color: #aaa;
+        }
+
+        select, input {
+            width: 100%;
+            padding: 8px;
+            background-color: #444;
+            border: 1px solid #555;
+            color: white;
+            border-radius: 4px;
+        }
+
+        button {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background-color: #357abd;
+        }
+
+        /* 預覽區域 */
+        #preview-box {
+            width: 100%;
+            height: 120px;
+            background-color: #3a3a3a;
+            border: 2px dashed #555;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+
+        /* 右側地圖區域樣式 */
+        #map-area {
+            flex-grow: 1;
+            position: relative;
+            background-color: #222;
+            /* 繪製網格背景 */
+            background-image: 
+                linear-gradient(var(--grid-color) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+            background-size: 50px 50px;
+            overflow: hidden;
+        }
+
+        /* 地圖上的符號樣式 */
+        .map-symbol {
+            position: absolute;
+            cursor: move;
+            filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.5));
+            transition: transform 0.1s;
+            /* 禁止選取圖片，避免拖曳時變成瀏覽器原生拖圖行為 */
+            user-select: none; 
+            -webkit-user-drag: none;
+        }
+
+        .map-symbol:hover {
+            transform: scale(1.1);
+            z-index: 100;
+        }
+
+        .map-symbol:active {
+            cursor: grabbing;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 左側控制面板 -->
+    <div id="sidebar">
+        <h2>兵棋編輯器</h2>
+        
+        <div id="preview-box">
+            <!-- 預覽符號將顯示於此 -->
+        </div>
+
+        <div class="control-group">
+            <label>陣營 (Affiliation)</label>
+            <select id="affiliation">
+                <option value="F">友軍 (Friend)</option>
+                <option value="H">敵軍 (Hostile)</option>
+                <option value="N">中立 (Neutral)</option>
+                <option value="U">未知 (Unknown)</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label>戰鬥維度 (Battle Dimension)</label>
+            <select id="dimension">
+                <option value="G">地面部隊 (Ground)</option>
+                <option value="A">空中部隊 (Air)</option>
+                <option value="S">海上部隊 (Sea)</option>
+                <!-- 增加水下選項以示範更完整的維度支援 -->
+                <option value="U">水下部隊 (Subsurface)</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label>兵種/功能 (Function)</label>
+            <!-- 選項現在會由 JavaScript 動態生成 -->
+            <select id="functionId">
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label>層級 (Echelon)</label>
+            <select id="echelon">
+                <option value="-">- 無 -</option>
+                <option value="D">班 (Squad)</option>
+                <option value="E">排 (Platoon)</option>
+                <option value="F">連 (Company)</option>
+                <option value="G">營 (Battalion)</option>
+                <option value="H">旅 (Regiment/Brigade)</option>
+                <option value="I">師 (Division)</option>
+                <option value="J">軍 (Corps)</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label>部隊番號 (Unique Designation)</label>
+            <input type="text" id="designation" placeholder="例如: 101, A, 1st">
+        </div>
+        
+        <div class="control-group">
+            <label>上級單位 (Higher Formation)</label>
+            <input type="text" id="higherFormation" placeholder="例如: 601旅">
+        </div>
+
+        <div class="control-group">
+            <label>狀態 (Status)</label>
+            <select id="status">
+                <option value="">現行 (Present)</option>
+                <option value="1">計畫中 (Anticipated)</option>
+            </select>
+        </div>
+
+        <button id="add-btn">加入地圖</button>
+        <p style="font-size: 0.8em; color: #666; text-align: center; margin-top: 10px;">
+            提示: 雙擊地圖上的符號可刪除
+        </p>
+    </div>
+
+    <!-- 右側地圖區域 -->
+    <div id="map-area">
+        <!-- 符號將被加入這裡 -->
+    </div>
+
+    <script>
+        // 初始化變數
+        const previewBox = document.getElementById('preview-box');
+        const mapArea = document.getElementById('map-area');
+        const addBtn = document.getElementById('add-btn');
+
+        // 輸入控制元件
+        const inputs = {
+            affiliation: document.getElementById('affiliation'),
+            dimension: document.getElementById('dimension'),
+            functionId: document.getElementById('functionId'),
+            echelon: document.getElementById('echelon'),
+            designation: document.getElementById('designation'),
+            higherFormation: document.getElementById('higherFormation'),
+            status: document.getElementById('status')
+        };
+
+        // 定義各維度的兵種代碼表 (Function IDs)
+        const functionMaps = {
+            "G": [ // 地面部隊
+                { value: "UCI----", text: "步兵 (Infantry)" },
+                { value: "UCIM---", text: "機械化步兵 (Mech Infantry)" },
+                { value: "UCA----", text: "裝甲/戰車 (Armor)" },
+                { value: "UCV----", text: "陸軍航空 (Aviation)" },
+                { value: "UCF----", text: "砲兵 (Artillery)" },
+                { value: "UCE----", text: "工兵 (Engineer)" },
+                { value: "UCR----", text: "偵察 (Recon)" },
+                { value: "UU-----", text: "戰鬥支援 (Combat Support)" }
+            ],
+            "A": [ // 空中部隊
+                { value: "MF-----", text: "定翼機 (Fixed Wing)" },
+                { value: "MH-----", text: "旋翼機 (Rotary Wing)" },
+                { value: "MQ-----", text: "無人機 (Drone/UAV)" },
+                { value: "MA-----", text: "攻擊機 (Attack)" },
+                { value: "MB-----", text: "轟炸機 (Bomber)" },
+                { value: "MFQ----", text: "戰鬥機 (Fighter)" }
+            ],
+            "S": [ // 海上水面部隊
+                { value: "NS-----", text: "水面作戰艦 (Surface Combatant)" },
+                { value: "NA-----", text: "兩棲作戰艦 (Amphibious)" },
+                { value: "NM-----", text: "水雷戰艦艇 (Mine Warfare)" },
+                { value: "NF-----", text: "巡防艦 (Frigate)" },
+                { value: "NB-----", text: "戰列艦 (Battleship)" }
+            ],
+            "U": [ // 水下部隊 (Subsurface)
+                { value: "S------", text: "潛艦 (Submarine)" },
+                { value: "SN-----", text: "核動力潛艦 (Nuclear)" },
+                { value: "SD-----", text: "柴電潛艦 (Diesel)" }
+            ]
+        };
+
+        // 更新兵種選單的函式
+        function updateFunctionOptions() {
+            const dim = inputs.dimension.value;
+            const options = functionMaps[dim] || functionMaps["G"]; // 預設回地面
+
+            // 清空現有選項
+            inputs.functionId.innerHTML = "";
+
+            // 填入新選項
+            options.forEach(opt => {
+                const el = document.createElement("option");
+                el.value = opt.value;
+                el.textContent = opt.text;
+                inputs.functionId.appendChild(el);
+            });
+            
+            // 選單更新後，立即重新繪製預覽
+            updatePreview();
+        }
+
+        // 監聽維度改變事件，觸發更新兵種選單
+        inputs.dimension.addEventListener('change', updateFunctionOptions);
+
+        // 監聽所有輸入變更以更新預覽
+        Object.values(inputs).forEach(input => {
+            input.addEventListener('input', updatePreview);
+        });
+
+        // 1. 構建 SIDC 代碼並生成符號
+        function createSymbolData() {
+            // SIDC 結構 (基於 MIL-STD-2525C)
+            // Pos 1: Coding Scheme (S)
+            // Pos 2: Affiliation (F/H/N/U)
+            // Pos 3: Battle Dimension (G/A/S/U)
+            // Pos 4: Status (P/A)
+            // Pos 5-10: Function ID (由選單決定)
+            // Pos 11-12: Echelon
+            
+            const aff = inputs.affiliation.value;
+            const dim = inputs.dimension.value;
+            const stat = inputs.status.value === '1' ? 'A' : 'P';
+            const func = inputs.functionId.value;
+            const ech = inputs.echelon.value;
+
+            // 組合 SIDC
+            let sidc = "S" + aff + dim + stat + func + ech;
+
+            // 處理修飾符
+            const options = {
+                size: 35,
+                uniqueDesignation: inputs.designation.value,
+                higherFormation: inputs.higherFormation.value,
+            };
+
+            return { sidc, options };
+        }
+
+        // 2. 更新預覽視窗
+        function updatePreview() {
+            const data = createSymbolData();
+            previewBox.innerHTML = '';
+            
+            // 創建符號
+            const sym = new ms.Symbol(data.sidc, { 
+                ...data.options, 
+                size: 50 // 預覽時大一點
+            });
+            
+            previewBox.appendChild(sym.asDOM());
+        }
+
+        // 3. 加入符號到地圖
+        addBtn.addEventListener('click', () => {
+            const data = createSymbolData();
+            const sym = new ms.Symbol(data.sidc, data.options);
+            
+            const symbolElem = sym.asDOM();
+            
+            const container = document.createElement('div');
+            container.className = 'map-symbol';
+            container.style.left = '50px';
+            container.style.top = '50px';
+            container.appendChild(symbolElem);
+
+            container.addEventListener('dblclick', (e) => {
+                e.stopPropagation();
+                if(confirm('確定要移除此單位嗎？')) {
+                    container.remove();
+                }
+            });
+
+            initDraggable(container);
+            mapArea.appendChild(container);
+        });
+
+        // 4. 拖曳邏輯
+        function initDraggable(el) {
+            let isDragging = false;
+            let startX, startY, initialLeft, initialTop;
+
+            el.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                startX = e.clientX;
+                startY = e.clientY;
+                initialLeft = el.offsetLeft;
+                initialTop = el.offsetTop;
+                el.style.zIndex = 1000;
+                el.style.cursor = 'grabbing';
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                e.preventDefault();
+                const dx = e.clientX - startX;
+                const dy = e.clientY - startY;
+                el.style.left = `${initialLeft + dx}px`;
+                el.style.top = `${initialTop + dy}px`;
+            });
+
+            window.addEventListener('mouseup', () => {
+                if (isDragging) {
+                    isDragging = false;
+                    el.style.zIndex = '';
+                    el.style.cursor = 'move';
+                }
+            });
+        }
+
+        // 程式啟動時，先初始化選單與預覽
+        updateFunctionOptions();
+    </script>
+</body>
+</html>

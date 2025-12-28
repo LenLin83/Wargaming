@@ -1,0 +1,19 @@
+{
+  "name": "wargame-sandbox",
+  "version": "1.0.0",
+  "description": "數位化兵棋部署與沙盤推演系統",
+  "scripts": {
+    "dev": "node server.cjs"
+  },
+  "keywords": [
+    "wargame",
+    "military",
+    "simulation",
+    "3d"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "milsymbol": "^3.0.3"
+  }
+}

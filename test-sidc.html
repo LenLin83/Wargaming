@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SIDC 層級測試</title>
+  <style>
+    body {
+      font-family: monospace;
+      padding: 20px;
+      background: #1a1a1a;
+      color: #eee;
+    }
+    .test-section {
+      margin: 20px 0;
+      padding: 15px;
+      background: #2a2a2a;
+      border-radius: 8px;
+    }
+    .test-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px;
+      border-bottom: 1px solid #3a3a3a;
+    }
+    .test-echelon {
+      width: 80px;
+      font-weight: bold;
+    }
+    .test-name {
+      width: 100px;
+    }
+    .test-sidc {
+      flex: 1;
+      color: #88c0d0;
+    }
+    .test-valid {
+      width: 80px;
+    }
+    .test-valid.true {
+      color: #a3be8c;
+    }
+    .test-valid.false {
+      color: #bf616a;
+    }
+    .test-canvas {
+      width: 80px;
+      height: 80px;
+      background: #3a3a3a;
+      border: 1px solid #4a4a4a;
+    }
+    h1 {
+      color: #88c0d0;
+    }
+    .summary {
+      padding: 15px;
+      background: #3a3a3a;
+      border-radius: 4px;
+      margin: 10px 0;
+      font-size: 14px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 10px 0;
+    }
+    th, td {
+      padding: 8px;
+      text-align: left;
+      border: 1px solid #4a4a4a;
+    }
+    th {
+      background: #3a3a3a;
+    }
+  </style>
+</head>
+<body>
+  <h1>SIDC 層級字母單元測試</h1>
+
+  <div id="summary" class="summary">載入中...</div>
+
+  <div class="test-section">
+    <h2>測試 1: APP-6 層級字母 (15位)</h2>
+    <table id="test1-table">
+      <thead>
+        <tr>
+          <th>字母</th>
+          <th>名稱</th>
+          <th>應顯示</th>
+          <th>SIDC</th>
+          <th>isValid</th>
+          <th>echelon</th>
+          <th>預覽</th>
+        </tr>
+      </thead>
+      <tbody id="test1-results"></tbody>
+    </table>
+  </div>
+
+  <div class="test-section">
+    <h2>測試 2: 不同 SIDC 格式</h2>
+    <div id="test2-results"></div>
+  </div>
+
+  <!-- Load milsymbol.js -->
+  <script src="https://unpkg.com/milsymbol@2.0.0/dist/milsymbol.js"></script>
+
+  <script>
+    // 測試配置 - 使用 15位字母格式 (APP-6/MIL-STD-2525)
+    const echelonTests = [
+      { echelon: 'K', name: '戰區', display: 'XXXXXX', sidc: 'SFGPUCI----K' },
+      { echelon: 'J', name: '集團軍', display: 'XXXXX', sidc: 'SFGPUCI----J' },
+      { echelon: 'I', name: '軍團', display: 'XXXX', sidc: 'SFGPUCI----I' },
+      { echelon: 'H', name: '軍', display: 'XXX', sidc: 'SFGPUCI----H' },
+      { echelon: 'G', name: '師', display: 'XX', sidc: 'SFGPUCI----G' },
+      { echelon: 'F', name: '旅', display: 'X', sidc: 'SFGPUCI----F' },
+      { echelon: 'E', name: '團', display: 'III', sidc: 'SFGPUCI----E' },
+      { echelon: 'D', name: '營', display: 'II', sidc: 'SFGPUCI----D' },
+      { echelon: 'C', name: '連', display: 'I', sidc: 'SFGPUCI----C' },
+      { echelon: 'B', name: '排', display: '•••', sidc: 'SFGPUCI----B' },
+      { echelon: 'A', name: '班', display: '••', sidc: 'SFGPUCI----A' }
+    ];
+
+    // 測試 1: 使用 15位字母格式
+    function test1() {
+      const container = document.getElementById('test1-results');
+      let html = '';
+      let validCount = 0;
+
+      console.log('\n========================================');
+      console.log('SIDC 層級單元測試 (15位字母格式)');
+      console.log('========================================');
+
+      echelonTests.forEach(test => {
+        const sidc = test.sidc;
+        const symbol = new ms.Symbol(sidc, { size: 60 });
+        const isValid = symbol.isValid();
+        const opts = symbol.getOptions();
+
+        if (isValid) validCount++;
+
+        const validClass = isValid ? 'true' : 'false';
+        const validText = isValid ? '✓ 有效' : '✗ 無效';
+
+        // Console 輸出
+        console.log(`${test.echelon} (${test.name}):`);
+        console.log(`  SIDC: ${sidc}`);
+        console.log(`  應顯示: ${test.display}`);
+        console.log(`  isValid(): ${isValid}`);
+        console.log(`  echelon: "${opts.echelon || 'undefined'}"`);
+        console.log(`  getOptions():`, opts);
+
+        html += `
+          <tr>
+            <td><strong>${test.echelon}</strong></td>
+            <td>${test.name}</td>
+            <td>${test.display}</td>
+            <td>${sidc}</td>
+            <td class="test-valid ${validClass}">${validText}</td>
+            <td>"${opts.echelon || '-'}"</td>
+            <td><canvas class="test-canvas" id="canvas1-${test.echelon}"></canvas></td>
+          </tr>
+        `;
+      });
+
+      container.innerHTML = html;
+
+      // 繪製符號
+      setTimeout(() => {
+        echelonTests.forEach(test => {
+          const canvas = document.getElementById(`canvas1-${test.echelon}`);
+          if (canvas && canvas.getContext) {
+            const symbol = new ms.Symbol(test.sidc, { size: 60 });
+            const ctx = canvas.getContext('2d');
+            const symbolCanvas = symbol.asCanvas();
+            if (symbolCanvas) {
+              ctx.drawImage(symbolCanvas, 10, 10);
+            }
+          }
+        });
+      }, 0);
+
+      console.log(`\n總計: ${validCount}/${echelonTests.length} 個層級有效`);
+      console.log('========================================\n');
+
+      return { total: echelonTests.length, valid: validCount };
+    }
+
+    // 測試 2: 測試不同的兵種類型
+    function test2() {
+      const container = document.getElementById('test2-results');
+      let html = '<h3>兵種類型測試 (20位 MIL-STD-2525D)</h3>';
+
+      const variants = [
+        // 步兵
+        { sidc: '1030050000100000000', name: '連級-步兵' },
+        // 裝甲
+        { sidc: '1030050001900000000', name: '連級-裝甲' },
+        // 砲兵
+        { sidc: '1030050001500000000', name: '連級-砲兵' },
+        // 工兵
+        { sidc: '1030050000600000000', name: '連級-工兵' },
+      ];
+
+      let validCount = 0;
+
+      variants.forEach(test => {
+        const symbol = new ms.Symbol(test.sidc, { size: 50 });
+        const isValid = symbol.isValid();
+        const opts = symbol.getOptions();
+
+        if (isValid) validCount++;
+
+        // Console 輸出
+        console.log(`${test.name}:`);
+        console.log(`  SIDC: ${test.sidc} (長度: ${test.sidc.length})`);
+        console.log(`  isValid(): ${isValid}`);
+        console.log(`  echelon: "${opts.echelon || 'undefined'}"`);
+        if (!isValid) {
+          console.log(`  getOptions():`, opts);
+        }
+
+        const validClass = isValid ? 'true' : 'false';
+        const validText = isValid ? '✓' : '✗';
+
+        html += `
+          <div class="test-row">
+            <div style="flex:1">${test.name}</div>
+            <div class="test-sidc">${test.sidc}</div>
+            <div>長度:${test.sidc.length}</div>
+            <div class="test-valid ${validClass}">${validText}</div>
+            ${isValid ? `<canvas class="test-canvas" id="canvas2-${test.sidc.substring(8, 12)}"></canvas>` : ''}
+          </div>
+        `;
+      });
+
+      container.innerHTML += html;
+
+      // 繪製有效的符號
+      setTimeout(() => {
+        variants.forEach(test => {
+          const canvasId = 'canvas2-' + test.sidc.substring(8, 12);
+          const canvas = document.getElementById(canvasId);
+          if (canvas && canvas.getContext) {
+            const symbol = new ms.Symbol(test.sidc, { size: 50 });
+            const ctx = canvas.getContext('2d');
+            const symbolCanvas = symbol.asCanvas();
+            if (symbolCanvas) {
+              ctx.drawImage(symbolCanvas, 15, 15);
+            }
+          }
+        });
+      }, 0);
+
+      console.log(`\n兵種類型測試: ${validCount}/${variants.length} 有效`);
+
+      return { total: variants.length, valid: validCount };
+    }
+
+    // 運行所有測試
+    function runAllTests() {
+      const result1 = test1();
+      const result2 = test2();
+
+      // 更新摘要
+      const summary = document.getElementById('summary');
+      summary.innerHTML = `
+        <strong>測試摘要：</strong><br>
+        層級字母測試: ${result1.valid}/${result1.total} 有效<br>
+        格式變體測試: ${result2.valid}/${result2.total} 有效<br>
+        <em>請查看 Console (F12) 獲取詳細資訊</em>
+      `;
+    }
+
+    // 頁面載入後運行
+    window.addEventListener('load', () => {
+      if (typeof ms !== 'undefined') {
+        console.log('========================================');
+        console.log('milsymbol.js 單元測試');
+        console.log('版本:', ms.version || '2.0.0');
+        console.log('========================================');
+        runAllTests();
+      } else {
+        document.getElementById('summary').innerHTML = '<span style="color: #bf616a;">錯誤: milsymbol.js 未載入</span>';
+      }
+    });
+  </script>
+</body>
+</html>
