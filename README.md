@@ -1,154 +1,154 @@
-# Wargaming - Military Wargame Sandbox System
+# Wargaming - 兵棋沙盤推演系統
 
-![License](https://img.shields.io/badge/license-Educational%20Use-blue)
+![License](https://img.shields.io/badge/license-教育使用-blue)
 ![Platform](https://img.shields.io/badge/platform-Web-lightgrey)
 
-A professional military simulation and decision support tool providing visualized, standardized 3D wargame sandbox for tactical operations.
+一套專業的軍事模擬與輔助決策工具，提供視覺化、標準化的 3D 兵棋沙盤，實現戰鬥序列（ORBAT）的數位化管理。
 
-## Features
+## 功能特色
 
-- **Symbol Editor**: Create military symbols following APP-6/MIL-STD-2525 standards
-- **Symbol Library**: Save and reuse commonly used symbols
-- **Organization Editor**: Hierarchical tree view for managing ORBAT (Order of Battle)
-- **3D Sandbox**: Three.js-powered terrain and unit visualization
-- **Drag & Drop**: Intuitive deployment from ORBAT tree to 3D map
-- **Persistent Storage**: LocalStorage-based data persistence
+- **符號編輯器**: 支援 APP-6/MIL-STD-2525 標準的軍事符號生成
+- **符號庫**: 儲存並重複使用常用符號
+- **組織編輯器**: 層級式樹狀圖管理戰鬥序列（ORBAT）
+- **3D 沙盤**: Three.js 驅動的地形與單位視覺化
+- **拖放部署**: 直觀的從 ORBAT 樹拖曳至 3D 地圖
+- **資料持久化**: 基於 LocalStorage 的本地儲存
 
-## Tech Stack
+## 技術堆疊
 
-| Layer | Technology |
-|-------|-----------|
-| **Frontend** | Vanilla JavaScript + Three.js |
-| **3D Engine** | Three.js |
-| **Symbol Generation** | milsymbol.js |
-| **State Management** | EventBus Pattern |
-| **Storage** | LocalStorage API |
-| **Build Tool** | Vite |
+| 層級 | 技術 |
+|------|------|
+| **前端** | Vanilla JavaScript + Three.js |
+| **3D 引擎** | Three.js |
+| **符號生成** | milsymbol.js |
+| **狀態管理** | EventBus 模式 |
+| **儲存** | LocalStorage API |
+| **建置工具** | Vite |
 
-## Architecture
+## 系統架構
 
-The system follows a **three-layer architecture**:
+系統採用 **三層架構**：
 
 ```
-UI Layer (ui/) → Frontend Layer (frontend/) → Backend Layer (backend/)
+UI 層 (ui/) → 前端層 (frontend/) → 後端層 (backend/)
 ```
 
-All inter-layer communication uses the **EventBus** pattern for loose coupling.
+所有跨層通訊使用 **EventBus** 模式以實現鬆耦合。
 
-### Project Structure
+### 專案結構
 
 ```
 Wargaming/
-├── backend/              # Data models & business services
-│   ├── data/            # Enums, Scene, Unit, TacticalGraphic
-│   ├── repositories/    # LocalStorage, MemoryStorage
-│   └── services/        # ORBAT, Scene, Symbol services
-├── frontend/            # 3D engine & core logic
-│   ├── core/            # App, Config, EventBus
-│   ├── engine/          # Symbol, Scene, Terrain, Unit engines
-│   └── utils/           # Coordinate, Math3D, UUID utilities
-├── ui/                  # DOM manipulation & UI managers
-│   └── managers/        # ORBAT, Property, Symbol Editor UIs
-├── css/                 # Stylesheets
-├── docs/                # Documentation
-├── js/                  # Entry point (main.js)
-└── index.html           # Main HTML page
+├── backend/              # 資料模型與業務服務
+│   ├── data/            # 列舉、場景、單位、戰術圖形
+│   ├── repositories/    # LocalStorage、MemoryStorage
+│   └── services/        # ORBAT、場景、符號服務
+├── frontend/            # 3D 引擎與核心邏輯
+│   ├── core/            # App、Config、EventBus
+│   ├── engine/          # 符號、場景、地形、單位引擎
+│   └── utils/           # 座標、數學、UUID 工具
+├── ui/                  # DOM 操作與 UI 管理器
+│   └── managers/        # ORBAT、屬性、符號編輯器 UI
+├── css/                 # 樣式表
+├── docs/                # 文件
+├── js/                  # 進入點 (main.js)
+└── index.html           # 主 HTML 頁面
 ```
 
-## SIDC Code Format
+## SIDC 代碼格式
 
-The system uses **15-character letter format** for SIDC codes (APP-6/MIL-STD-2525):
-
-```
-S + Affiliation + Dimension + Status + FunctionID (6 chars) + Echelon
-```
-
-Example: `SFGPUCI----G` = 友軍地面現行步兵營
+系統使用 **15 字元字母格式**的 SIDC 代碼（APP-6/MIL-STD-2525）：
 
 ```
-Position 1:    S (Standard)
-Position 2:    F/H/N/U (Friend/Hostile/Neutral/Unknown)
-Position 3:    G/A/S/U (Ground/Air/Sea/Subsurface)
-Position 4:    P/A (Present/Anticipated)
-Position 5-10: Function ID (e.g., UCI---- = infantry)
-Position 11-16: Echelon letter (D=班, E=排, F=連, G=營, H=旅, I=師, J=軍)
+S + 陣營 + 維度 + 狀態 + 功能碼(6字元) + 階層
 ```
 
-## Getting Started
+範例：`SFGPUCI----G` = 友軍地面現行步兵營
 
-### Prerequisites
+```
+位置 1:    S (標準)
+位置 2:    F/H/N/U (友軍/敵軍/中立/未知)
+位置 3:    G/A/S/U (地面/空中/海上/水下)
+位置 4:    P/A (現行/計畫中)
+位置 5-10: 功能碼 (如 UCI---- = 步兵)
+位置 11-16: 階層字母 (D=班, E=排, F=連, G=營, H=旅, I=師, J=軍)
+```
+
+## 快速開始
+
+### 前置需求
 
 - Node.js 16+
-- npm or yarn
+- npm 或 yarn
 
-### Installation
+### 安裝
 
 ```bash
-# Install dependencies
+# 安裝相依套件
 npm install
 ```
 
-### Development
+### 開發模式
 
 ```bash
-# Start development server (runs on http://localhost:3000)
+# 啟動開發伺服器 (執行於 http://localhost:3000)
 npm run dev
 ```
 
-### Build
+### 建置
 
 ```bash
-# Create production build
+# 建置生產版本
 npm run build
 ```
 
-## Usage
+## 使用說明
 
-### Symbol Editor
+### 符號編輯器
 
-1. Select **Affiliation** (陣營): Friend/Hostile/Neutral/Unknown
-2. Select **Dimension** (戰鬥維度): Ground/Air/Sea/Subsurface
-3. Select **Function** (兵種): Dynamically updates based on dimension
-4. Select **Echelon** (層級): Squad to Corps level
-5. Enter **Designation** (部隊番号) and **Higher Formation** (上級單位)
-6. Click **「加入符號庫」** to save for reuse
+1. 選擇 **陣營**: 友軍/敵軍/中立/未知
+2. 選擇 **戰鬥維度**: 地面/空中/海上/水下
+3. 選擇 **兵種**: 根據維度動態變化
+4. 選擇 **階層**: 從班到軍
+5. 輸入 **部隊番號**和**上級單位**
+6. 點擊 **「加入符號庫」**儲存供日後使用
 
-### Organization Editor
+### 組織編輯器
 
-1. Enter organization name
-2. Drag symbols from **符號來源** (Symbol Source) to the organization tree
-3. First symbol becomes the root node
-4. Drag onto existing units to add as children
-5. Click **Save** to persist organization
+1. 輸入組織名稱
+2. 從**符號來源**拖曳符號到組織樹
+3. 第一個符號成為根節點
+4. 拖曳到現有單位上可新增為子單位
+5. 點擊**儲存**按鈕持久化組織
 
-## Browser Support
+## 瀏覽器支援
 
-| Browser | Minimum Version |
-|---------|----------------|
+| 瀏覽器 | 最低版本 |
+|-------|---------|
 | Chrome | 90+ |
 | Firefox | 88+ |
 | Edge | 90+ |
 | Safari | 14+ |
 
-## Documentation
+## 文件
 
-- [CLAUDE.md](./CLAUDE.md) - Developer guide for Claude Code
-- [docs/00-專案企劃書.md](./docs/00-專案企劃書.md) - Project proposal
-- [docs/01-資料結構規格.md](./docs/01-資料結構規格.md) - Data structure specification
-- [docs/02-技術架構.md](./docs/02-技術架構.md) - Technical architecture
+- [CLAUDE.md](./CLAUDE.md) - Claude Code 開發者指南
+- [docs/00-專案企劃書.md](./docs/00-專案企劃書.md) - 專案企劃書
+- [docs/01-資料結構規格.md](./docs/01-資料結構規格.md) - 資料結構規格
+- [docs/02-技術架構.md](./docs/02-技術架構.md) - 技術架構文件
 
-## Contributing
+## 貢獻
 
-This project is for educational and research purposes.
+本專案僅供教育與研究使用。
 
-## License
+## 授權
 
-Educational Use Only
+僅供教育使用
 
-## Author
+## 作者
 
 **LenLin83**
 
 ---
 
-Built with ❤️ using Three.js and milsymbol.js
+使用 ❤️ 建構，基於 Three.js 和 milsymbol.js
