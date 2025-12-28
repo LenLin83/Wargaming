@@ -1,144 +1,154 @@
-# 數位化兵棋部署與沙盤推演系統
+# Wargaming - Military Wargame Sandbox System
 
-## 專案概述
+![License](https://img.shields.io/badge/license-Educational%20Use-blue)
+![Platform](https://img.shields.io/badge/platform-Web-lightgrey)
 
-本系統是一套專業的軍事模擬與輔助決策工具，提供視覺化、標準化的 3D 兵棋沙盤，實現戰鬥序列（ORBAT）的數位化管理，並達成兵棋符號與 3D 實體模型的無縫聯動。
+A professional military simulation and decision support tool providing visualized, standardized 3D wargame sandbox for tactical operations.
 
-## 核心功能
+## Features
 
-- **ORBAT 管理**: 樹狀層級編輯器，管理部隊編制與隸屬關係
-- **符號生成**: 支援 APP-6D / MIL-STD-2525 標準符號
-- **3D 沙盤**: 真實地形渲染與單位視覺化
-- **LOD 系統**: 依距離自動切換顯示模式（符號/模型）
-- **戰術標繪**: 點、線、面、箭頭等戰術圖形繪製
-- **拖拽部署**: 從 ORBAT 樹拖曳單位至 3D 地圖
+- **Symbol Editor**: Create military symbols following APP-6/MIL-STD-2525 standards
+- **Symbol Library**: Save and reuse commonly used symbols
+- **Organization Editor**: Hierarchical tree view for managing ORBAT (Order of Battle)
+- **3D Sandbox**: Three.js-powered terrain and unit visualization
+- **Drag & Drop**: Intuitive deployment from ORBAT tree to 3D map
+- **Persistent Storage**: LocalStorage-based data persistence
 
-## 技術堆疊
+## Tech Stack
 
-| 類別 | 技術 |
-|------|------|
-| 前端框架 | Vue 3 |
-| 3D 引擎 | Three.js |
-| 狀態管理 | Pinia |
-| 符號生成 | milsymbol.js |
-| 建置工具 | Vite |
-| 程式語言 | TypeScript |
+| Layer | Technology |
+|-------|-----------|
+| **Frontend** | Vanilla JavaScript + Three.js |
+| **3D Engine** | Three.js |
+| **Symbol Generation** | milsymbol.js |
+| **State Management** | EventBus Pattern |
+| **Storage** | LocalStorage API |
+| **Build Tool** | Vite |
 
-## 專案結構
+## Architecture
+
+The system follows a **three-layer architecture**:
+
+```
+UI Layer (ui/) → Frontend Layer (frontend/) → Backend Layer (backend/)
+```
+
+All inter-layer communication uses the **EventBus** pattern for loose coupling.
+
+### Project Structure
 
 ```
 Wargaming/
-├── docs/                    # 文件目錄
-│   ├── 00-專案企劃書.md      # 企劃書
-│   ├── 01-資料結構規格.md    # 資料結構定義
-│   └── 02-技術架構.md        # 技術架構文件
-├── public/                  # 公開資源
-│   └── assets/
-│       ├── models/          # 3D 模型 (GLB/GLTF)
-│       ├── textures/        # 貼圖
-│       └── icons/           # 圖示
-├── src/
-│   ├── core/                # 核心系統
-│   │   ├── SceneManager.ts  # 場景管理器
-│   │   ├── CameraController.ts
-│   │   └── Renderer.ts
-│   ├── modules/             # 功能模組
-│   │   ├── orbat/           # ORBAT 模組
-│   │   ├── symbol/          # 符號引擎
-│   │   ├── terrain/         # 地形系統
-│   │   ├── tactical/        # 戰術標繪
-│   │   └── deployment/      # 部署系統
-│   ├── utils/               # 工具函數
-│   ├── types/               # 型別定義
-│   └── main.ts              # 程式進入點
-└── package.json
+├── backend/              # Data models & business services
+│   ├── data/            # Enums, Scene, Unit, TacticalGraphic
+│   ├── repositories/    # LocalStorage, MemoryStorage
+│   └── services/        # ORBAT, Scene, Symbol services
+├── frontend/            # 3D engine & core logic
+│   ├── core/            # App, Config, EventBus
+│   ├── engine/          # Symbol, Scene, Terrain, Unit engines
+│   └── utils/           # Coordinate, Math3D, UUID utilities
+├── ui/                  # DOM manipulation & UI managers
+│   └── managers/        # ORBAT, Property, Symbol Editor UIs
+├── css/                 # Stylesheets
+├── docs/                # Documentation
+├── js/                  # Entry point (main.js)
+└── index.html           # Main HTML page
 ```
 
-## 開發指南
+## SIDC Code Format
 
-### 安裝相依套件
+The system uses **15-character letter format** for SIDC codes (APP-6/MIL-STD-2525):
+
+```
+S + Affiliation + Dimension + Status + FunctionID (6 chars) + Echelon
+```
+
+Example: `SFGPUCI----G` = 友軍地面現行步兵營
+
+```
+Position 1:    S (Standard)
+Position 2:    F/H/N/U (Friend/Hostile/Neutral/Unknown)
+Position 3:    G/A/S/U (Ground/Air/Sea/Subsurface)
+Position 4:    P/A (Present/Anticipated)
+Position 5-10: Function ID (e.g., UCI---- = infantry)
+Position 11-16: Echelon letter (D=班, E=排, F=連, G=營, H=旅, I=師, J=軍)
+```
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 16+
+- npm or yarn
+
+### Installation
 
 ```bash
+# Install dependencies
 npm install
 ```
 
-### 開發模式
+### Development
 
 ```bash
+# Start development server (runs on http://localhost:3000)
 npm run dev
 ```
 
-### 建置生產版本
+### Build
 
 ```bash
+# Create production build
 npm run build
 ```
 
-### 型別檢查
+## Usage
 
-```bash
-npm run type-check
-```
+### Symbol Editor
 
-## 檔案格式
+1. Select **Affiliation** (陣營): Friend/Hostile/Neutral/Unknown
+2. Select **Dimension** (戰鬥維度): Ground/Air/Sea/Subsurface
+3. Select **Function** (兵種): Dynamically updates based on dimension
+4. Select **Echelon** (層級): Squad to Corps level
+5. Enter **Designation** (部隊番号) and **Higher Formation** (上級單位)
+6. Click **「加入符號庫」** to save for reuse
 
-### 場景檔案格式 (.json)
+### Organization Editor
 
-```json
-{
-  "format": "wargame-scene",
-  "version": "1.0.0",
-  "scene": {
-    "name": "場景名稱",
-    "terrain": { ... },
-    "units": { ... },
-    "graphics": [ ... ]
-  }
-}
-```
+1. Enter organization name
+2. Drag symbols from **符號來源** (Symbol Source) to the organization tree
+3. First symbol becomes the root node
+4. Drag onto existing units to add as children
+5. Click **Save** to persist organization
 
-### SIDC 代碼格式
+## Browser Support
 
-20 碼標準代碼，符合 APP-6D / MIL-STD-2525 規範：
-
-```
-位置:  1    2    3    4-5    6-10     11-14    15-17    18-20
-範例:  3    0    0    31     00015    1211     000      20
-
-欄位說明:
-┌─────┬─────────┬────────────────────────────────────────┐
-│位置 │ 名稱    │ 說明                                   │
-├─────┼─────────┼────────────────────────────────────────┤
-│ 1   │ 標準版本│ 3=MIL-STD-2525D                        │
-│ 2   │ 身份    │ 0=友軍, 1=敵軍, 2=中立, 3=未知         │
-│ 3   │ 戰鬥態樣│ 0=現實, 1=演習, 2=模擬                 │
-│ 4-5 │ 領域    │ 10=陸戰, 30=空戰, 50=海戰             │
-│ 6-10│ 實體類型│ 00015=裝甲, 00010=步兵...              │
-└─────┴─────────┴────────────────────────────────────────┘
-```
-
-## 瀏覽器支援
-
-| 瀏覽器 | 最低版本 |
-|-------|---------|
+| Browser | Minimum Version |
+|---------|----------------|
 | Chrome | 90+ |
 | Firefox | 88+ |
 | Edge | 90+ |
 | Safari | 14+ |
 
-## 效能目標
+## Documentation
 
-| 指標 | 目標值 |
-|------|-------|
-| 初始載入時間 | < 3 秒 |
-| 幀率 (FPS) | ≥ 60 |
-| 同場景單位數 | ≥ 1000 |
-| 記憶體使用 | < 2GB |
+- [CLAUDE.md](./CLAUDE.md) - Developer guide for Claude Code
+- [docs/00-專案企劃書.md](./docs/00-專案企劃書.md) - Project proposal
+- [docs/01-資料結構規格.md](./docs/01-資料結構規格.md) - Data structure specification
+- [docs/02-技術架構.md](./docs/02-技術架構.md) - Technical architecture
 
-## 授權
+## Contributing
 
-本專案僅供教育與研究使用。
+This project is for educational and research purposes.
 
-## 聯絡資訊
+## License
 
-如有問題或建議，請透過專案 Issue 提出討論。
+Educational Use Only
+
+## Author
+
+**LenLin83**
+
+---
+
+Built with ❤️ using Three.js and milsymbol.js
