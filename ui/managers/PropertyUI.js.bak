@@ -1,0 +1,226 @@
+/**
+ * UI 層 - 屬性面板管理器
+ * UI Layer - Property Panel Manager
+ * 負責：單位屬性顯示與編輯
+ */
+
+export class PropertyUI {
+  constructor(eventBus) {
+    this.eventBus = eventBus;
+    this.container = document.getElementById('property-content');
+    this.currentUnit = null;
+    this.currentUnitData = null;
+
+    // 事件監聽器清理函數
+    this._eventCleanup = [];
+
+    this._setupEventListeners();
+  }
+
+  /**
+   * 設置事件監聽
+   */
+  _setupEventListeners() {
+    // 移動單位按鈕激活
+    const cleanup1 = this.eventBus.on('ui:move-unit-mode', ({ uuid }) => {
+      this._showMoveModeActive(uuid);
+    });
+    this._eventCleanup.push(cleanup1);
+
+    // 退出移動模式
+    const cleanup2 = this.eventBus.on('ui:exit-move-mode', () => {
+      this._hideMoveModeActive();
+    });
+    this._eventCleanup.push(cleanup2);
+
+    // 監聽單位更新事件（移動後更新位置顯示）
+    const cleanup3 = this.eventBus.on('backend:unit:updated', ({ uuid, updates }) => {
+      if (this.currentUnit && this.currentUnit.uuid === uuid) {
+        // 更新單位資料
+        if (this.currentUnitData) {
+          Object.assign(this.currentUnitData, updates);
+          this._updatePositionDisplay();
+        }
+      }
+    });
+    this._eventCleanup.push(cleanup3);
+  }
+
+  /**
+   * 顯示單位屬性
+   */
+  showUnit(uuid) {
+    this.currentUnit = { uuid };
+
+    // 從後端服務取得單位資料
+    this.eventBus.emit('ui:get-unit-data', {
+      uuid,
+      callback: (data) => {
+        this.currentUnitData = data;
+        this._renderUnitInfo(data);
+      }
+    });
+  }
+
+  /**
+   * 渲染單位資訊
+   */
+  _renderUnitInfo(data) {
+    if (!data) {
+      this.container.innerHTML = `
+        <div class="property-group">
+          <div class="group-title">基本資訊</div>
+          <div class="property-row">
+            <span class="property-label">UUID</span>
+            <span class="property-value">${this.currentUnit.uuid}</span>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    // 解析 SIDC 獲取單位類型
+    const affiliationMap = { 'F': '友軍', 'H': '敵軍', 'N': '中立', 'U': '未知' };
+    const affiliation = affiliationMap[data.sidc?.[1]] || '未知';
+
+    this.container.innerHTML = `
+      <div class="property-group">
+        <div class="group-title">基本資訊</div>
+        <div class="property-row">
+          <span class="property-label">部隊番號</span>
+          <span class="property-value">${data.designation || '-'}</span>
+        </div>
+        <div class="property-row">
+          <span class="property-label">陣營</span>
+          <span class="property-value">${affiliation}</span>
+        </div>
+        <div class="property-row">
+          <span class="property-label">上級單位</span>
+          <span class="property-value">${data.higherFormation || '-'}</span>
+        </div>
+        <div class="property-row">
+          <span class="property-label">SIDC</span>
+          <span class="property-value">${data.sidc || '-'}</span>
+        </div>
+      </div>
+
+      <div class="property-group">
+        <div class="group-title">位置資訊</div>
+        <div class="property-row">
+          <span class="property-label">X</span>
+          <span class="property-value" id="unit-pos-x">${(data.x || 0).toFixed(1)}</span>
+        </div>
+        <div class="property-row">
+          <span class="property-label">Y</span>
+          <span class="property-value" id="unit-pos-y">${(data.y || 0).toFixed(1)}</span>
+        </div>
+        <div class="property-row">
+          <span class="property-label">Z</span>
+          <span class="property-value" id="unit-pos-z">${(data.z || 0).toFixed(1)}</span>
+        </div>
+      </div>
+
+      <div class="property-group">
+        <div class="group-title">操作</div>
+        <button id="move-unit-btn" class="action-btn move-btn">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M8 2v12M2 8h12"/>
+          </svg>
+          移動單位
+        </button>
+        <p class="hint-text">點擊按鈕後，在地圖上選擇新位置</p>
+      </div>
+    `;
+
+    // 綁定移動按鈕事件
+    const moveBtn = document.getElementById('move-unit-btn');
+    if (moveBtn) {
+      const onClick = () => {
+        this.eventBus.emit('ui:enter-move-mode', { uuid: this.currentUnit.uuid });
+      };
+      moveBtn.addEventListener('click', onClick);
+      // 保存清理函數
+      this._btnCleanup = () => moveBtn.removeEventListener('click', onClick);
+    }
+  }
+
+  /**
+   * 更新位置顯示
+   */
+  _updatePositionDisplay() {
+    const posX = document.getElementById('unit-pos-x');
+    const posY = document.getElementById('unit-pos-y');
+    const posZ = document.getElementById('unit-pos-z');
+
+    if (posX) posX.textContent = (this.currentUnitData.x || 0).toFixed(1);
+    if (posY) posY.textContent = (this.currentUnitData.y || 0).toFixed(1);
+    if (posZ) posZ.textContent = (this.currentUnitData.z || 0).toFixed(1);
+  }
+
+  /**
+   * 顯示移動模式激活狀態
+   */
+  _showMoveModeActive(uuid) {
+    const moveBtn = document.getElementById('move-unit-btn');
+    if (moveBtn) {
+      moveBtn.classList.add('active');
+      moveBtn.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M6 10l-4 4m0-4l4 4M2 6l4-4m-4 0l4 4"/>
+        </svg>
+        點擊地圖移動 (ESC 取消)
+      `;
+    }
+  }
+
+  /**
+   * 隱藏移動模式激活狀態
+   */
+  _hideMoveModeActive() {
+    const moveBtn = document.getElementById('move-unit-btn');
+    if (moveBtn) {
+      moveBtn.classList.remove('active');
+      moveBtn.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M8 2v12M2 8h12"/>
+        </svg>
+        移動單位
+      `;
+    }
+  }
+
+  /**
+   * 清空屬性面板
+   */
+  clear() {
+    // 清理按鈕事件監聽器
+    if (this._btnCleanup) {
+      this._btnCleanup();
+      this._btnCleanup = null;
+    }
+
+    this.currentUnit = null;
+    this.currentUnitData = null;
+
+    this.container.innerHTML = `
+      <div class="empty-state">
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="#555" stroke-width="2">
+          <circle cx="24" cy="24" r="8"/>
+          <path d="M24 4v8m0 24v8M4 24h8m24 0h8"/>
+        </svg>
+        <p>未選擇單位</p>
+        <p class="hint">在 3D 視圖中點擊單位以檢視屬性</p>
+      </div>
+    `;
+  }
+
+  /**
+   * 銷毀
+   */
+  dispose() {
+    this.clear();
+    // 清理所有事件監聽器
+    this._eventCleanup.forEach(cleanup => cleanup());
+    this._eventCleanup = [];
+  }
+}
