@@ -12,7 +12,9 @@ export class GUIManager {
     this.gui = null;
     this.params = {
       // 符號設置
-      symbolHeight: 15,
+      symbolWidth: 100,
+      symbolHeight: 50,
+      symbolPositionY: 100,
       showConnectionLines: true,
       connectionLineOpacity: 0.6,
 
@@ -57,8 +59,14 @@ export class GUIManager {
   setupControls() {
     // 符號設置資料夾
     const symbolFolder = this.gui.addFolder('符號設置 (Symbol)');
-    symbolFolder.add(this.params, 'symbolHeight', 5, 200)
+    symbolFolder.add(this.params, 'symbolWidth', 10, 200)
+      .name('符號寬度')
+      .onChange((value) => this.updateSymbolSize(value));
+    symbolFolder.add(this.params, 'symbolHeight', 10, 200)
       .name('符號高度')
+      .onChange((value) => this.updateSymbolSize(value));
+    symbolFolder.add(this.params, 'symbolPositionY', 5, 200)
+      .name('符號位置Y')
       .onChange((value) => this.updateSymbolHeight(value));
     symbolFolder.add(this.params, 'showConnectionLines')
       .name('顯示連接線')
@@ -106,7 +114,17 @@ export class GUIManager {
   }
 
   /**
-   * 更新符號高度
+   * 更新符號大小
+   */
+  updateSymbolSize() {
+    this.eventBus.emit('gui:symbol:size', {
+      width: this.params.symbolWidth,
+      height: this.params.symbolHeight
+    });
+  }
+
+  /**
+   * 更新符號位置Y (距離地面高度)
    */
   updateSymbolHeight(value) {
     this.eventBus.emit('gui:symbol:height', { height: value });
@@ -179,7 +197,9 @@ export class GUIManager {
    * 重置為預設值
    */
   resetToDefaults() {
-    this.params.symbolHeight = 15;
+    this.params.symbolWidth = 100;
+    this.params.symbolHeight = 50;
+    this.params.symbolPositionY = 100;
     this.params.showConnectionLines = true;
     this.params.connectionLineOpacity = 0.6;
     this.params.modelSize = 2;
@@ -194,6 +214,7 @@ export class GUIManager {
     this.gui.updateDisplay();
 
     // 觸發更新事件
+    this.updateSymbolSize(this.params.symbolSize);
     this.updateSymbolHeight(this.params.symbolHeight);
     this.updateConnectionLines(this.params.showConnectionLines);
     this.updateLineOpacity(this.params.connectionLineOpacity);

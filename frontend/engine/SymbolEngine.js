@@ -6,7 +6,7 @@
 
 import * as THREE from 'three';
 import { eventBus } from '../core/EventBus.js';
-import { Identity } from '../../backend/data/Enums.js';
+import { Identity } from '../../shared/Enums.js';
 
 // milsymbol is loaded as global 'ms' object via script tag
 
@@ -25,26 +25,49 @@ export class SymbolEngine {
 
   /**
    * 生成符號貼圖
+   * @param {string} sidc - SIDC 代碼
+   * @param {Object} options - 選項
+   * @param {number} options.size - 尺寸 (預設 200 以容納文字)
+   * @param {number} options.outlineWidth - 描邊寬度
+   * @param {string} options.outlineColor - 描邊顏色
+   * @param {string} options.uniqueDesignation - 部隊番號
+   * @param {string} options.higherFormation - 上級單位
+   * @param {string} options.echelon - 層級名稱 (如 "company", "battalion")
    */
   async generateTexture(sidc, options = {}) {
     const {
-      size = 128,
+      size = 200,
       outlineWidth = 0,
-      outlineColor = '#000000'
+      outlineColor = '#000000',
+      uniqueDesignation = '',
+      higherFormation = '',
+      echelon = ''
     } = options;
 
-    // 檢查快取
-    const cacheKey = `${sidc}-${size}`;
+    // 檢查快取 (包含文字參數)
+    const cacheKey = `${sidc}-${size}-${uniqueDesignation}-${higherFormation}`;
     if (this.cache.has(cacheKey)) {
       return this.cache.get(cacheKey);
     }
 
-    // 使用 milsymbol.js 生成符號
-    const symbol = new window.ms.Symbol(sidc, {
+    // 建構 milsymbol 選項
+    const msOptions = {
       size: size,
       outlineWidth: outlineWidth,
-      outlineColor: outlineColor
-    });
+      outlineColor: outlineColor,
+      // 文字設定
+      infoColor: '#ffffff',
+      infoSize: 20,
+      infoPadding: 8
+    };
+
+    // 添加文字參數
+    if (uniqueDesignation) msOptions.uniqueDesignation = uniqueDesignation;
+    if (higherFormation) msOptions.higherFormation = higherFormation;
+    if (echelon) msOptions.echelon = echelon;
+
+    // 使用 milsymbol.js 生成符號
+    const symbol = new window.ms.Symbol(sidc, msOptions);
 
     // 取得 Canvas
     const canvas = symbol.asCanvas();
@@ -62,15 +85,31 @@ export class SymbolEngine {
 
   /**
    * 生成符號 Sprite
+   * @param {string} sidc - SIDC 代碼
+   * @param {Object} options - 選項
+   * @param {number} options.size - Sprite 顯示尺寸
+   * @param {number} options.opacity - 透明度
+   * @param {number} options.offsetY - Y 軸偏移
+   * @param {string} options.uniqueDesignation - 部隊番號
+   * @param {string} options.higherFormation - 上級單位
+   * @param {string} options.echelon - 層級名稱
    */
   async generateSprite(sidc, options = {}) {
     const {
       size = 32,
       opacity = 0.9,
-      offsetY = 5
+      offsetY = 5,
+      uniqueDesignation = '',
+      higherFormation = '',
+      echelon = ''
     } = options;
 
-    const texture = await this.generateTexture(sidc, { size: 64 });
+    const texture = await this.generateTexture(sidc, {
+      size: 200, // 貼圖尺寸固定為 100 以容納文字
+      uniqueDesignation,
+      higherFormation,
+      echelon
+    });
 
     const material = new THREE.SpriteMaterial({
       map: texture,

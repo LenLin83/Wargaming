@@ -10,6 +10,8 @@ import { PropertyUI } from './managers/PropertyUI.js';
 import { ToolbarUI } from './managers/ToolbarUI.js';
 import { TimelineUI } from './managers/TimelineUI.js';
 import { SymbolEditorUI } from './managers/SymbolEditorUI.js';
+import { DeploymentManager } from './managers/DeploymentManager.js';
+import { MoveModeManager } from './managers/MoveModeManager.js';
 
 export class UIManager {
   constructor(eventBus) {
@@ -19,6 +21,9 @@ export class UIManager {
     this.toolbarUI = null;
     this.timelineUI = null;
     this.symbolEditorUI = null;
+    this.deploymentManager = null;
+    this.moveModeManager = null;
+    this.movePathUI = null;
   }
 
   /**
@@ -32,11 +37,21 @@ export class UIManager {
     this.timelineUI = new TimelineUI(this.eventBus);
     this.symbolEditorUI = new SymbolEditorUI(this.eventBus);
     this.symbolEditorUI.initialize();
+    this.deploymentManager = new DeploymentManager(this.eventBus);
+    this.moveModeManager = new MoveModeManager(this.eventBus);
 
     // 設定事件處理
     this._setupEventHandlers();
 
     console.log('UI 管理器已就緒');
+  }
+
+  /**
+   * 設置移動路徑 UI（在 main.js 中初始化後調用）
+   */
+  setMovePathUI(movePathUI) {
+    this.movePathUI = movePathUI;
+    // PropertyUI 通過 EventBus 與 MovePathUI 通訊，不需要直接引用
   }
 
   /**
@@ -112,5 +127,7 @@ export class UIManager {
     if (this.toolbarUI) this.toolbarUI.dispose();
     if (this.timelineUI) this.timelineUI.dispose();
     if (this.symbolEditorUI) this.symbolEditorUI.dispose();
+    if (this.deploymentManager) this.deploymentManager.dispose();
+    if (this.moveModeManager) this.moveModeManager.dispose();
   }
 }

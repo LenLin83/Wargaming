@@ -6,4 +6,4 @@
 export { Unit } from './Unit.js';
 export { Scene } from './Scene.js';
 export { TacticalGraphic } from './TacticalGraphic.js';
-export * from './Enums.js';
+export * from '../../shared/Enums.js';

@@ -1,6 +1,9 @@
 /**
- * 後端層 - 枚舉定義
- * Backend Layer - Enumerations
+ * 共享層 - 枚舉定義
+ * Shared Layer - Enumerations
+ *
+ * 此模組包含跨層使用的枚舉定義
+ * This module contains enum definitions used across layers
  */
 
 /**

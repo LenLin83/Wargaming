@@ -12,7 +12,6 @@ import { UnitEngine } from '../engine/UnitEngine.js';
 import { SymbolEngine } from '../engine/SymbolEngine.js';
 import { TacticalEngine } from '../engine/TacticalEngine.js';
 import { GUIManager } from '../engine/GUIManager.js';
-import { UIManager } from '../../ui/UIManager.js';
 
 export class App {
   constructor() {
@@ -23,7 +22,6 @@ export class App {
     this.symbolEngine = null;
     this.tacticalEngine = null;
     this.guiManager = null;
-    this.uiManager = null;
   }
 
   /**
@@ -89,18 +87,13 @@ export class App {
       };
       console.log('提示: 使用 toggleGUI() 開關控制面板');
 
-      // 7. 初始化 UI 管理器
-      this.uiManager = new UIManager(eventBus);
-      this.uiManager.initialize();
-      console.log('✓ UI 管理器已初始化');
-
-      // 8. 註冊引擎事件處理
+      // 7. 註冊引擎事件處理
       this._setupEventHandlers();
 
-      // 9. 註冊 GUI 事件處理
+      // 8. 註冊 GUI 事件處理
       this._setupGUIHandlers();
 
-      // 10. 啟動渲染循環
+      // 9. 啟動渲染循環
       this.scene3D.startRenderLoop();
 
       this.initialized = true;
@@ -150,6 +143,11 @@ export class App {
    * 設定 GUI 事件處理器
    */
   _setupGUIHandlers() {
+    // 符號大小
+    eventBus.on('gui:symbol:size', ({ width, height }) => {
+      this.unitEngine.updateSymbolSize(width, height);
+    });
+
     // 符號高度
     eventBus.on('gui:symbol:height', ({ height }) => {
       this.unitEngine.updateSymbolHeight(height);
@@ -241,7 +239,6 @@ export class App {
     if (this.terrainEngine) this.terrainEngine.dispose();
     if (this.scene3D) this.scene3D.dispose();
     if (this.guiManager) this.guiManager.dispose();
-    if (this.uiManager) this.uiManager.dispose();
 
     eventBus.clear();
     this.initialized = false;

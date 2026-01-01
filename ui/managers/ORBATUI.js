@@ -23,6 +23,11 @@ export class ORBATUI {
     this.eventBus.on('backend:unit:moved', ({ uuid, oldParentId, newParentId }) => {
       this._handleUnitMoved(uuid);
     });
+
+    // 監聽組織載入事件（從組織編輯器載入已儲存的組織）
+    this.eventBus.on('organization:loaded', ({ organization }) => {
+      this._loadOrganizationToTree(organization);
+    });
   }
 
   /**
@@ -165,12 +170,20 @@ export class ORBATUI {
       this._showContextMenu(e, unit, div);
     });
 
-    // 點擊選擇
-    content.addEventListener('click', () => {
-      this._selectNode(div, unit);
+    // 點擊進入部署模式（直接部署單位）
+    content.addEventListener('click', (e) => {
+      this._enterDeployMode(unit);
     });
 
     return div;
+  }
+
+  /**
+   * 進入部署模式
+   */
+  _enterDeployMode(unit) {
+    // 觸發部署模式事件
+    this.eventBus.emit('ui:enter-deploy-mode', { unit });
   }
 
   /**
@@ -323,6 +336,171 @@ export class ORBATUI {
 
     // 請求重新渲染
     this.eventBus.emit('ui:rebuild-orbat-tree');
+  }
+
+  /**
+   * 載入組織到 ORBAT 樹（從組織編輯器載入已儲存的組織）
+   * 組織以資料夾形式分組顯示
+   */
+  _loadOrganizationToTree(organization) {
+    if (!organization || !organization.units || organization.units.length === 0) {
+      return;
+    }
+
+    // 建立組織資料夾節點
+    const orgFolderId = 'org-folder-' + organization.id;
+    const orgFolderNode = this._createOrganizationFolder(organization.name, organization.id, orgFolderId);
+
+    // 將組織資料夾加入容器
+    this.container.appendChild(orgFolderNode);
+    this.unitMap.set(orgFolderId, orgFolderNode);
+
+    // 在組織資料夾下加入單位（保持巢狀結構）
+    const childrenContainer = orgFolderNode.querySelector('.tree-children');
+
+    // 遞迴計數單位總數
+    const countUnits = (unit) => {
+      let count = 1;
+      if (unit.children && unit.children.length > 0) {
+        for (const child of unit.children) {
+          count += countUnits(child);
+        }
+      }
+      return count;
+    };
+
+    // 計算總單位數
+    let totalUnits = 0;
+    for (const rootUnit of organization.units) {
+      totalUnits += countUnits(rootUnit);
+    }
+
+    // 更新單位數量徽章
+    const countBadge = orgFolderNode.querySelector('.node-count-badge');
+    if (countBadge) {
+      countBadge.textContent = totalUnits + ' 單位';
+    }
+
+    // SIDC 層級字母對應到 ORBAT level
+    const echelonToLevel = {
+      'D': 'squad',      // 班
+      'E': 'platoon',    // 排
+      'F': 'company',    // 連
+      'G': 'battalion',  // 營
+      'H': 'brigade',    // 旅
+      'I': 'division',   // 師
+      'J': 'corps'       // 軍
+    };
+
+    // 從 SIDC 提取層級
+    const getLevelFromSIDC = (sidc) => {
+      if (!sidc || sidc.length < 15) return 'company';
+      const echelon = sidc.charAt(14); // 位置 15 的字母
+      return echelonToLevel[echelon] || 'company';
+    };
+
+    // 遞迴渲染單位樹
+    const renderUnitTree = (unit, parentContainer) => {
+      // 從 SIDC 提取層級，或使用已有的 level 欄位
+      const level = unit.level || getLevelFromSIDC(unit.sidc);
+
+      // 建立單位節點
+      const orbatUnit = {
+        uuid: unit.id,
+        sidc: unit.sidc,
+        name: unit.name,
+        level: level,
+        parentId: null, // 使用樹狀結構不需要 parentId
+        designation: unit.designation,
+        higherFormation: unit.higherFormation,
+        _isOrgUnit: true // 標記為組織單位
+      };
+
+      const node = this._createNodeElement(orbatUnit);
+      parentContainer.appendChild(node);
+      this.unitMap.set(unit.id, node);
+
+      // 遞迴處理子節點
+      if (unit.children && unit.children.length > 0) {
+        const nodeChildren = node.querySelector('.tree-children');
+        for (const child of unit.children) {
+          renderUnitTree(child, nodeChildren);
+        }
+        // 顯示展開按鈕
+        node.classList.add('has-children', 'expanded');
+      }
+    };
+
+    // 從根節點開始渲染
+    for (const rootUnit of organization.units) {
+      renderUnitTree(rootUnit, childrenContainer);
+    }
+
+    // 預設展開組織資料夾
+    orgFolderNode.classList.add('expanded');
+    const orgChildren = orgFolderNode.querySelector('.tree-children');
+    orgChildren.style.display = 'block';
+  }
+
+  /**
+   * 建立組織資料夾節點
+   */
+  _createOrganizationFolder(orgName, orgId, folderId) {
+    const div = document.createElement('div');
+    div.className = 'tree-node org-folder';
+    div.dataset.uuid = folderId;
+    div.dataset.orgId = orgId;
+    div.dataset.isFolder = 'true';
+
+    const content = document.createElement('div');
+    content.className = 'node-content node-content-folder';
+
+    // 資料夾圖示
+    const expander = document.createElement('span');
+    expander.className = 'node-expander';
+    expander.innerHTML = '<svg width="12" height="12" viewBox="0 0 12 12"><path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
+    expander.onclick = (e) => {
+      e.stopPropagation();
+      this._toggleNode(div);
+    };
+
+    // 資料夾圖示
+    const folderIcon = document.createElement('span');
+    folderIcon.className = 'node-folder-icon';
+    folderIcon.innerHTML = '📁';
+
+    // 組織名稱
+    const label = document.createElement('span');
+    label.className = 'node-label node-label-folder';
+    label.textContent = orgName;
+
+    // 單位數量標籤
+    const countBadge = document.createElement('span');
+    countBadge.className = 'node-count-badge';
+    countBadge.dataset.orgId = orgId;
+    countBadge.textContent = '0';
+
+    content.appendChild(expander);
+    content.appendChild(folderIcon);
+    content.appendChild(label);
+    content.appendChild(countBadge);
+    div.appendChild(content);
+
+    const children = document.createElement('div');
+    children.className = 'tree-children';
+    div.appendChild(children);
+
+    // 點擊展開/收起
+    content.addEventListener('click', () => {
+      this._toggleNode(div);
+    });
+
+    // 防止拖曳組織資料夾
+    div.addEventListener('dragstart', (e) => {
+      e.preventDefault();
+    });
+
+    return div;
   }
 
   /**

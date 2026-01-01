@@ -317,6 +317,236 @@ button:disabled {
   color: var(--text-primary);
 }
 
+.property-input {
+  flex: 1;
+  padding: 6px 10px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 13px;
+  transition: all 0.2s;
+}
+
+.property-input:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.property-input::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.6;
+}
+
+.action-btn.apply-btn {
+  margin-top: 8px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #27ae60;
+  border: 1px solid #27ae60;
+  border-radius: 6px;
+  color: white;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.action-btn.apply-btn:hover {
+  background: #219a52;
+  border-color: #219a52;
+}
+
+.direction-reference {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  margin-top: 8px;
+  border-top: 1px solid var(--border-color);
+}
+
+.direction-reference .ref-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.direction-reference .ref-item {
+  font-size: 11px;
+  color: var(--accent-color);
+  background: rgba(74, 144, 226, 0.15);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+/* 移動路徑控制樣式 */
+.path-info-row {
+  padding: 8px 0;
+  margin-bottom: 8px;
+}
+
+.path-info {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.path-controls {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.action-btn.path-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.action-btn.path-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--accent-color);
+}
+
+.action-btn.path-btn.play-btn {
+  background: rgba(46, 204, 113, 0.2);
+  border-color: #27ae60;
+  color: #27ae60;
+}
+
+.action-btn.path-btn.play-btn:hover {
+  background: rgba(46, 204, 113, 0.3);
+}
+
+.action-btn.path-btn.active {
+  background: var(--accent-color);
+  border-color: var(--accent-color);
+  color: white;
+}
+
+/* 路徑點列表 */
+.path-waypoints-list {
+  max-height: 150px;
+  overflow-y: auto;
+  border-top: 1px solid var(--border-color);
+  padding-top: 8px;
+}
+
+.waypoint-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+
+.waypoint-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.waypoint-index {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-tertiary);
+  border-radius: 50%;
+  font-size: 10px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.waypoint-coords {
+  flex: 1;
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-family: monospace;
+}
+
+.waypoint-remove-btn {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  transition: all 0.15s;
+}
+
+.waypoint-remove-btn:hover {
+  background: rgba(231, 76, 60, 0.2);
+  color: #e74c3c;
+}
+
+/* 路徑編輯模式提示 */
+.path-edit-hint {
+  position: fixed;
+  bottom: 120px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  z-index: 10001;
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  animation: fadeIn 0.2s ease;
+}
+
+.path-edit-hint .hint-actions {
+  display: flex;
+  gap: 8px;
+  margin-left: 12px;
+  padding-left: 12px;
+  border-left: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.path-edit-hint .hint-btn {
+  padding: 4px 12px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  color: white;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.path-edit-hint .hint-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
 .empty-state {
   display: flex;
   flex-direction: column;
@@ -950,6 +1180,51 @@ button:disabled {
 
 .tree-node.expanded > .tree-children {
   display: block;
+}
+
+/* ========== 組織資料夾樣式 ========== */
+.org-folder {
+  margin-bottom: 8px;
+}
+
+.org-folder > .node-content {
+  background: rgba(0, 122, 204, 0.08);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-weight: 500;
+}
+
+.org-folder > .node-content:hover {
+  background: rgba(0, 122, 204, 0.15);
+}
+
+.node-content-folder {
+  cursor: pointer;
+}
+
+.node-folder-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.node-label-folder {
+  color: var(--accent-color);
+  font-weight: 600;
+}
+
+.node-count-badge {
+  margin-left: auto;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-secondary);
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.org-folder .tree-children {
+  margin-left: 32px;
+  border-left: 1px solid rgba(0, 122, 204, 0.2);
 }
 
 /* ========== 右鍵選單 ========== */
@@ -2115,4 +2390,133 @@ button:disabled {
 
 .org-scale-indicator.show {
   opacity: 1;
+}
+
+/* ========== 部署模式游標樣式 ========== */
+.deploy-cursor {
+  position: fixed;
+  pointer-events: none;
+  z-index: 10000;
+  transform: translate(-50%, -50%);
+  opacity: 0.9;
+}
+
+.deploy-cursor-label {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  margin-top: 6px;
+  font-weight: 500;
+}
+
+.deploy-tooltip {
+  position: fixed;
+  bottom: 120px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #0078d4 0%, #005a9e 100%);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  z-index: 10001;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  animation: fadeIn 0.2s ease;
+}
+
+.deploy-tooltip-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.deploy-tooltip-icon {
+  font-size: 18px;
+}
+
+.deploy-tooltip-text {
+  white-space: nowrap;
+}
+
+/* ========== 移動模式樣式 ========== */
+.move-cursor {
+  position: fixed;
+  pointer-events: none;
+  z-index: 10000;
+  opacity: 0.9;
+}
+
+.mode-hint {
+  position: fixed;
+  bottom: 120px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  z-index: 10001;
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  animation: fadeIn 0.2s ease;
+}
+
+/* 屬性面板移動按鈕樣式 */
+.action-btn.move-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.action-btn.move-btn:hover {
+  background: rgba(243, 156, 18, 0.15);
+  border-color: #f39c12;
+  color: #f39c12;
+}
+
+.action-btn.move-btn.active {
+  background: #f39c12;
+  border-color: #f39c12;
+  color: white;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(243, 156, 18, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(243, 156, 18, 0);
+  }
+}
+
+.hint-text {
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-align: center;
+  margin-top: 8px;
+  line-height: 1.4;
 }

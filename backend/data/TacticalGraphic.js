@@ -3,7 +3,7 @@
  * Backend Layer - Tactical Graphic Data Model
  */
 
-import { GraphicType } from './Enums.js';
+import { GraphicType } from '../../shared/Enums.js';
 
 /**
  * 戰術圖形資料模型

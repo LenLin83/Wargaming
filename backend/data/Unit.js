@@ -3,7 +3,7 @@
  * Backend Layer - Unit Data Model
  */
 
-import { UnitLevel, ServiceBranch, CombatPosture, MovementState } from './Enums.js';
+import { UnitLevel, ServiceBranch, CombatPosture, MovementState } from '../../shared/Enums.js';
 
 /**
  * 單位資料模型
@@ -21,6 +21,8 @@ export class Unit {
     this.sidc = data.sidc || '10031000151211000020'; // 預設友軍裝甲
     this.symbolSize = data.symbolSize || 32;
     this.symbolColor = data.symbolColor || null;
+    this.designation = data.designation || ''; // 部隊番號
+    this.higherFormation = data.higherFormation || ''; // 上級單位
 
     // ========== 單位屬性 ==========
     this.level = data.level || UnitLevel.COMPANY;
@@ -46,6 +48,16 @@ export class Unit {
       effectiveness: data.effectiveness !== undefined ? data.effectiveness : 100,
       suppression: data.suppression || 0
     };
+
+    // ========== 火力配置 ==========
+    this.firepower = {
+      range: data.fireRange || 0,              // 火力範圍 (公尺)
+      directionStart: data.directionStart || 0, // 射界左起 (度數, 0=北, 90=東, 180=南, 270=西)
+      directionEnd: data.directionEnd || 0     // 射界右至 (度數)
+    };
+
+    // ========== 移動路徑 ==========
+    this.movePath = data.movePath || []; // 移動路徑點數組 [{x, y, z, handleIn, handleOut}]
 
     // ========== 移動狀態 ==========
     this.movement = {
@@ -117,6 +129,16 @@ export class Unit {
       this.supply.provisions = updates.provisions !== undefined ? updates.provisions : this.supply.provisions;
       this.calculateSupplyOverall();
     }
+    // 處理火力配置更新
+    if (updates.fireRange !== undefined || updates.directionStart !== undefined || updates.directionEnd !== undefined) {
+      this.firepower.range = updates.fireRange !== undefined ? updates.fireRange : this.firepower.range;
+      this.firepower.directionStart = updates.directionStart !== undefined ? updates.directionStart : this.firepower.directionStart;
+      this.firepower.directionEnd = updates.directionEnd !== undefined ? updates.directionEnd : this.firepower.directionEnd;
+    }
+    // 處理移動路徑更新
+    if (updates.movePath !== undefined) {
+      this.movePath = updates.movePath;
+    }
   }
 
   /**
@@ -132,6 +154,8 @@ export class Unit {
       sidc: this.sidc,
       symbolSize: this.symbolSize,
       symbolColor: this.symbolColor,
+      designation: this.designation,
+      higherFormation: this.higherFormation,
       level: this.level,
       branch: this.branch,
       commander: this.commander,
@@ -140,6 +164,8 @@ export class Unit {
       fillRate: this.fillRate,
       supply: this.supply,
       combat: this.combat,
+      firepower: this.firepower,
+      movePath: this.movePath,
       movement: this.movement,
       transform: this.transform,
       createdAt: this.createdAt,

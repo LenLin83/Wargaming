@@ -6,7 +6,7 @@
 
 import * as THREE from 'three';
 import { eventBus } from '../core/EventBus.js';
-import { GraphicType } from '../../backend/data/Enums.js';
+import { GraphicType } from '../../shared/Enums.js';
 
 export class TacticalEngine {
   constructor(scene3D, eventBus) {

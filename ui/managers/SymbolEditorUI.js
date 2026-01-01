@@ -52,18 +52,34 @@ const DimensionFunctionMaps = {
 };
 
 /**
- * 層級選項 (對應 test.html)
- * 注意：test.html 的字母與我們系統原本的不同
+ * 層級選項 (已修正為符合 NATO APP-6/MIL-STD-2525 標準)
+ * SIDC Position 12 (Symbol Modifier 2)
+ * -: Null
+ * A: Team/Crew (伍/組)
+ * B: Squad (班)
+ * C: Section (組/班)
+ * D: Platoon (排)
+ * E: Company (連)
+ * F: Battalion (營)
+ * G: Regiment (團)
+ * H: Brigade (旅)
+ * I: Division (師)
+ * J: Corps (軍)
+ * K: Army (軍團/方面軍)
  */
 const TestEchelonOptions = [
-  { value: "-", text: "- 無 -", echelonName: "" },
-  { value: "D", text: "班 (Squad)", echelonName: "team" },
-  { value: "E", text: "排 (Platoon)", echelonName: "squad" },
-  { value: "F", text: "連 (Company)", echelonName: "platoon" },
-  { value: "G", text: "營 (Battalion)", echelonName: "company" },
-  { value: "H", text: "旅 (Regiment/Brigade)", echelonName: "battalion" },
-  { value: "I", text: "師 (Division)", echelonName: "regiment" },
-  { value: "J", text: "軍 (Corps)", echelonName: "brigade" }
+  { value: "-", text: "- 無 -", echelonName: "", levelName: "" },
+  { value: "A", text: "伍/組 (Team)", echelonName: "team", levelName: "team" },
+  { value: "B", text: "班 (Squad)", echelonName: "squad", levelName: "squad" },
+  { value: "C", text: "分排/組 (Section)", echelonName: "section", levelName: "section" },
+  { value: "D", text: "排 (Platoon)", echelonName: "platoon", levelName: "platoon" },
+  { value: "E", text: "連 (Company)", echelonName: "company", levelName: "company" },
+  { value: "F", text: "營 (Battalion)", echelonName: "battalion", levelName: "battalion" },
+  { value: "G", text: "團 (Regiment)", echelonName: "regiment", levelName: "regiment" },
+  { value: "H", text: "旅 (Brigade)", echelonName: "brigade", levelName: "brigade" },
+  { value: "I", text: "師 (Division)", echelonName: "division", levelName: "division" },
+  { value: "J", text: "軍 (Corps)", echelonName: "corps", levelName: "corps" },
+  { value: "K", text: "軍團 (Army)", echelonName: "army", levelName: "army" }
 ];
 
 export class SymbolEditorUI {
@@ -79,7 +95,7 @@ export class SymbolEditorUI {
       affiliation: 'F',  // 友軍
       dimension: 'G',    // 地面部隊
       functionId: 'UCI----',  // 步兵
-      echelon: 'G',      // 營 (對應 test.html 的 G)
+      echelon: 'F',      // 預設為營 (Battalion)
       designation: '',   // 部隊番號
       higherFormation: '', // 上級單位
       status: ''         // 狀態 (空=現行, '1'=計畫中)
@@ -579,7 +595,8 @@ export class SymbolEditorUI {
               sidc: librarySymbol.sidc,
               name: librarySymbol.name,
               designation: librarySymbol.designation,
-              higherFormation: librarySymbol.higherFormation
+              higherFormation: librarySymbol.higherFormation,
+              level: librarySymbol.level
             });
           }
         } else {
@@ -744,7 +761,11 @@ export class SymbolEditorUI {
         size: 80,  // 增大尺寸
         uniqueDesignation: this.currentValues.designation,
         higherFormation: this.currentValues.higherFormation,
-        echelon: echelonData.echelonName  // 使用完整名稱
+        echelon: echelonData.echelonName,  // 使用完整名稱
+        // 設定文字為白色
+        infoColor: '#ffffff',
+        infoSize: 12,
+        infoPadding: 4
       });
 
       ctx.clearRect(0, 0, 60, 60);
@@ -763,10 +784,11 @@ export class SymbolEditorUI {
    * 取得符號資料
    */
   _getSymbolData() {
+    const echelonData = TestEchelonOptions.find(opt => opt.value === this.currentValues.echelon) || TestEchelonOptions[0];
     return {
       sidc: this._generateSIDC(),
       name: '新建單位',
-      level: this.currentValues.level,
+      level: echelonData.levelName,
       commandType: this.currentValues.commandType,
       branchType: this.currentValues.branchType
     };
@@ -836,7 +858,7 @@ export class SymbolEditorUI {
       <div class="org-item ${this.organization.id === org.id ? 'active' : ''}" data-index="${index}">
         <div class="org-item-icon">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-            <path d="M3 3h14v2H3V3zm0 4h14v2H3V7zm0 4h10v2H3v-2z"/>
+            <path d="M3 3h14v2H3V3zm0 4h14v2H3V7zm0 4h14v2H3v-2zm0 4h10v2H3v-2z"/>
           </svg>
         </div>
         <div class="org-item-info">
@@ -1035,7 +1057,8 @@ export class SymbolEditorUI {
             sidc: librarySymbol.sidc,
             name: librarySymbol.name,
             designation: librarySymbol.designation,
-            higherFormation: librarySymbol.higherFormation
+            higherFormation: librarySymbol.higherFormation,
+            level: librarySymbol.level
           }, unit.id);
         }
       } else {
@@ -1220,7 +1243,8 @@ export class SymbolEditorUI {
                 sidc: librarySymbol.sidc,
                 name: librarySymbol.name,
                 designation: librarySymbol.designation,
-                higherFormation: librarySymbol.higherFormation
+                higherFormation: librarySymbol.higherFormation,
+                level: librarySymbol.level
               }, unitId);
             }
           } else {
@@ -1320,6 +1344,11 @@ export class SymbolEditorUI {
 
     this._renderOrgTree();
     this._renderOrgList();
+
+    // 發射事件到 ORBAT，同步組織單位到沙盤
+    this.eventBus.emit('organization:loaded', {
+      organization: this.organization
+    });
   }
 
   /**
@@ -1459,7 +1488,8 @@ export class SymbolEditorUI {
       name: '單位',
       designation: this.currentValues.designation,
       higherFormation: this.currentValues.higherFormation,
-      echelon: echelonData.echelonName,
+      echelon: echelonData.echelonName,   // 用於 milsymbol.js 繪製
+      level: echelonData.levelName,       // 用於 ORBAT 系統顯示
       affiliation: this.currentValues.affiliation,
       dimension: this.currentValues.dimension,
       functionId: this.currentValues.functionId,
@@ -1551,7 +1581,11 @@ export class SymbolEditorUI {
         size: symbolSize,
         uniqueDesignation: symbolData.designation,
         higherFormation: symbolData.higherFormation,
-        echelon: symbolData.echelon
+        echelon: symbolData.echelon,
+        // 設定文字為白色
+        infoColor: '#ffffff',
+        infoSize: 40,
+        infoPadding: 10
       });
 
       // 清除並繪製
@@ -1628,7 +1662,11 @@ export class SymbolEditorUI {
         size: 200,  // 增大尺寸以確保層級符號可見
         uniqueDesignation: this.currentValues.designation,
         higherFormation: this.currentValues.higherFormation,
-        echelon: echelonData.echelonName  // 使用完整名稱
+        echelon: echelonData.echelonName,  // 使用完整名稱
+        // 設定文字為白色
+        infoColor: '#ffffff',
+        infoSize: 16,
+        infoPadding: 5
       });
 
       console.log('[SymbolEditor] 當前符號預覽:');
@@ -1756,7 +1794,11 @@ export class SymbolEditorUI {
         size: 200,
         uniqueDesignation: this.currentValues.designation,
         higherFormation: this.currentValues.higherFormation,
-        echelon: echelonData.echelonName  // 使用完整名稱
+        echelon: echelonData.echelonName,  // 使用完整名稱
+        // 設定文字為白色
+        infoColor: '#ffffff',
+        infoSize: 16,
+        infoPadding: 5
       });
       const svgString = symbol.asSVG();
 

@@ -3,7 +3,7 @@
  * Backend Layer - Symbol Business Service
  */
 
-import { Identity } from '../data/Enums.js';
+import { Identity } from '../../shared/Enums.js';
 
 /**
  * 符號業務服務

@@ -7,7 +7,7 @@
 import * as THREE from 'three';
 import { Config } from '../core/Config.js';
 import { eventBus, Events } from '../core/EventBus.js';
-import { LODLevel } from '../../backend/data/Enums.js';
+import { LODLevel } from '../../shared/Enums.js';
 
 export class UnitEngine {
   constructor(scene3D, symbolEngine, eventBus) {
@@ -45,8 +45,6 @@ export class UnitEngine {
     // 建立符號
     await entity.createSymbol();
 
-    // 建立標籤
-    await entity.createLabel();
 
     // 設定位置
     entity.updateTransform();
@@ -141,6 +139,25 @@ export class UnitEngine {
   }
 
   /**
+   * 移動單位到新位置
+   */
+  moveUnitToPosition(uuid, position) {
+    const entity = this.units.get(uuid);
+    if (!entity) {
+      console.warn(`找不到要移動的單位: ${uuid}`);
+      return;
+    }
+
+    // 更新 3D 位置
+    entity.group.position.set(position.x, position.y, position.z);
+
+    // 更新資料
+    entity.data.transform.position = { ...position };
+
+    console.log(`單位已移動: ${uuid} → (${position.x.toFixed(1)}, ${position.y.toFixed(1)}, ${position.z.toFixed(1)})`);
+  }
+
+  /**
    * 更新 LOD（每幀調用）
    */
   updateLOD() {
@@ -193,6 +210,15 @@ export class UnitEngine {
   updateSymbolHeight(height) {
     for (const entity of this.units.values()) {
       entity.updateSymbolHeight(height);
+    }
+  }
+
+  /**
+   * 更新符號大小 (GUI 控制)
+   */
+  updateSymbolSize(width, height) {
+    for (const entity of this.units.values()) {
+      entity.updateSymbolSize(width, height);
     }
   }
 
@@ -280,6 +306,10 @@ class UnitEntity {
     this.label = null;
     this.connectionLine = null;
 
+    // 火力視覺元素
+    this.fireRangeRing = null;
+    this.fireSectorMesh = null;
+
     this.selected = false;
     this.lodLevel = LODDetail.DETAIL;
   }
@@ -312,7 +342,7 @@ class UnitEntity {
     this.model.castShadow = true;
     this.model.receiveShadow = true;
     this.model.position.y = size.y / 2; // 放在地面上
-    this.model.userData.uuid = this.data.uuid;
+    
 
     this.group.add(this.model);
   }
@@ -321,32 +351,145 @@ class UnitEntity {
    * 建立符號
    */
   async createSymbol() {
-    // 符號高度位置 (模型上方)
-    const symbolHeight = 15;
+    // 符號高度位置 (距離地面)
+    const symbolHeight = 100;
     const modelTop = this.model ? 2 : 0; // 模型頂部高度
 
-    // 建立連接線 (從模型頂部到符號)
+    // 建立連接線 (從模型頂部到符號) - 綠色發光效果
     const lineGeometry = new THREE.BufferGeometry().setFromPoints([
       new THREE.Vector3(0, modelTop, 0),
       new THREE.Vector3(0, symbolHeight, 0)
     ]);
     const lineMaterial = new THREE.LineBasicMaterial({
-      color: 0x888888,
+      color: 0x00ff88,      // 亮綠色
       transparent: true,
-      opacity: 0.6
+      opacity: 0.9          // 提高透明度使發光效果更明顯
     });
     this.connectionLine = new THREE.Line(lineGeometry, lineMaterial);
     this.group.add(this.connectionLine);
 
-    // 建立符號
+    // 建立符號 - 傳遞文字參數
     this.symbol = await this.symbolEngine.generateSprite(this.data.sidc, {
       size: Config.unit.symbol.defaultSize,
-      opacity: Config.unit.symbol.opacity
+      opacity: Config.unit.symbol.opacity,
+      uniqueDesignation: this.data.designation || '',
+      higherFormation: this.data.higherFormation || '',
+      echelon: this.data.level || '' // level 與 echelon 使用相同值（如 company, battalion）
     });
 
+    // 固定符號大小為 100x50
+    this.symbol.scale.set(100, 50, 1);
+    this.customSymbolSize = { width: 100, height: 50 };
+    this.symbol.userData.uuid = this.data.uuid;
     this.symbol.position.y = symbolHeight;
 
     this.group.add(this.symbol);
+  }
+
+  /**
+   * 建立或更新火力範圍圓圈
+   */
+  updateFireRange(range) {
+    // 移除舊的範圍圓圈
+    if (this.fireRangeRing) {
+      this.group.remove(this.fireRangeRing);
+      this.fireRangeRing.geometry.dispose();
+      this.fireRangeRing.material.dispose();
+      this.fireRangeRing = null;
+    }
+
+    if (range <= 0) return;
+
+    // 建立圓圈幾何
+    const segments = 64;
+    const geometry = new THREE.RingGeometry(range - 0.5, range + 0.5, segments);
+    geometry.rotateX(-Math.PI / 2); // 旋轉至水平
+
+    const material = new THREE.MeshBasicMaterial({
+      color: 0xff4444,      // 紅色
+      transparent: true,
+      opacity: 0.4,
+      side: THREE.DoubleSide
+    });
+
+    this.fireRangeRing = new THREE.Mesh(geometry, material);
+    this.fireRangeRing.position.y = 0.5; // 略高於地面避免 z-fighting
+
+    this.group.add(this.fireRangeRing);
+  }
+
+  /**
+   * 建立或更新射界扇形
+   * @param {number} directionStart - 射界左起角度 (度數, 0=北, 90=東, 180=南, 270=西)
+   * @param {number} directionEnd - 射界右至角度 (度數)
+   * @param {number} range - 火力範圍
+   */
+  updateFireSector(directionStart, directionEnd, range) {
+    // 移除舊的射界
+    if (this.fireSectorMesh) {
+      this.group.remove(this.fireSectorMesh);
+      this.fireSectorMesh.geometry.dispose();
+      this.fireSectorMesh.material.dispose();
+      this.fireSectorMesh = null;
+    }
+
+    if (range <= 0) return;
+
+    // 如果沒有設置射界角度，不顯示扇形
+    if (directionStart === 0 && directionEnd === 0) return;
+
+    // 建立扇形幾何
+    const segments = 64;
+    const shape = new THREE.Shape();
+
+    // 轉換角度為弧度
+    const startAngle = THREE.MathUtils.degToRad(directionStart);
+    const endAngle = THREE.MathUtils.degToRad(directionEnd);
+
+    // 計算角度範圍（處理跨越 0/360 度的情況）
+    let angleDiff = endAngle - startAngle;
+    if (angleDiff < 0) {
+      angleDiff += Math.PI * 2; // 跨越 0 度
+    }
+
+    // 繪製扇形（從左起角度到右至角度，順時針）
+    shape.moveTo(0, 0);
+    for (let i = 0; i <= segments; i++) {
+      const angle = startAngle + (angleDiff * i / segments);
+      const x = Math.cos(angle) * range;
+      const z = Math.sin(angle) * range;
+      shape.lineTo(x, z);
+    }
+    shape.closePath();
+
+    const geometry = new THREE.ShapeGeometry(shape);
+    geometry.rotateX(-Math.PI / 2); // 旋轉至水平
+
+    const material = new THREE.MeshBasicMaterial({
+      color: 0xffaa00,      // 橙色
+      transparent: true,
+      opacity: 0.25,
+      side: THREE.DoubleSide
+    });
+
+    this.fireSectorMesh = new THREE.Mesh(geometry, material);
+    this.fireSectorMesh.position.y = 0.6; // 略高於範圍圓圈
+
+    this.group.add(this.fireSectorMesh);
+  }
+
+  /**
+   * 更新火力視覺化（統一入口）
+   */
+  updateFirepower(firepower) {
+    if (firepower) {
+      this.updateFireRange(firepower.range || 0);
+      this.updateFireSector(
+        firepower.directionStart || 0,
+        firepower.directionEnd || 0,
+        firepower.range || 0
+      );
+    }
   }
 
   /**
@@ -416,12 +559,25 @@ class UnitEntity {
 
     if (this.connectionLine) {
       if (selected) {
-        this.connectionLine.material.color.setHex(0x00aaff);
+        // 選取時使用更亮的綠色
+        this.connectionLine.material.color.setHex(0x00ff88);
         this.connectionLine.material.opacity = 1;
       } else {
-        this.connectionLine.material.color.setHex(0x888888);
-        this.connectionLine.material.opacity = 0.6;
+        // 未選取時也是綠色，但透明度稍低
+        this.connectionLine.material.color.setHex(0x00ff88);
+        this.connectionLine.material.opacity = 0.9;
       }
+    }
+  }
+
+  /**
+   * 更新符號大小 (GUI 控制)
+   * 禁用 LOD 對符號大小的自動調整
+   */
+  updateSymbolSize(width, height) {
+    this.customSymbolSize = { width, height };
+    if (this.symbol) {
+      this.symbol.scale.set(width, height, 1);
     }
   }
 
@@ -474,7 +630,7 @@ class UnitEntity {
       this.model.position.y = size / 2;
       // 更新連接線底部位置
       if (this.connectionLine) {
-        const symbolHeight = this.symbol ? this.symbol.position.y : 15;
+        const symbolHeight = this.symbol ? this.symbol.position.y : 100;
         const points = [
           new THREE.Vector3(0, size, 0),
           new THREE.Vector3(0, symbolHeight, 0)
@@ -524,7 +680,12 @@ class UnitEntity {
     // 符號可見性
     if (this.symbol) {
       this.symbol.visible = config.showSymbol;
-      this.symbol.scale.set(config.symbolSize, config.symbolSize, 1);
+      // 如果有用戶自訂的大小，使用自訂大小；否則使用 LOD 配置
+      if (this.customSymbolSize) {
+        this.symbol.scale.set(this.customSymbolSize.width, this.customSymbolSize.height, 1);
+      } else {
+        this.symbol.scale.set(config.symbolSize, config.symbolSize, 1);
+      }
     }
   }
 
@@ -545,6 +706,15 @@ class UnitEntity {
     }
     if (this.label) {
       this.label.material.dispose();
+    }
+    // 清理火力視覺元素
+    if (this.fireRangeRing) {
+      this.fireRangeRing.geometry.dispose();
+      this.fireRangeRing.material.dispose();
+    }
+    if (this.fireSectorMesh) {
+      this.fireSectorMesh.geometry.dispose();
+      this.fireSectorMesh.material.dispose();
     }
   }
 }

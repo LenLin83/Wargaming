@@ -53,28 +53,28 @@ export const Config = {
         minDistance: 500,
         showModel: false,
         showSymbol: true,
-        symbolSize: 32
+        symbolSize: 60
       },
       {
         name: 'operational',
         minDistance: 200,
         showModel: false,
         showSymbol: true,
-        symbolSize: 48
+        symbolSize: 80
       },
       {
         name: 'tactical',
         minDistance: 50,
         showModel: true,
         showSymbol: true,
-        symbolSize: 32
+        symbolSize: 80
       },
       {
         name: 'detail',
         minDistance: 0,
         showModel: true,
         showSymbol: true,
-        symbolSize: 24
+        symbolSize: 60
       }
     ]
   },
@@ -89,7 +89,7 @@ export const Config = {
     },
     // 符號設定
     symbol: {
-      defaultSize: 32,
+      defaultSize: 80, // 增加尺寸以容納文字標籤
       offsetY: 5,
       opacity: 0.9
     }

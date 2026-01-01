@@ -4,7 +4,7 @@
  * 負責：兵棋符號編輯、預覽、生成
  */
 
-import { Identity, UnitLevel } from '../../backend/data/Enums.js';
+import { Identity, UnitLevel } from '../../shared/Enums.js';
 import * as THREE from 'three';
 
 /**
